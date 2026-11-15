@@ -305,7 +305,7 @@ export const LIBRARY = [
   "kind": "article",
   "title": "Investor Bulletin: Index Funds",
   "author": "Investor.gov (U.S. SEC)",
-  "url": "https://investor.gov/additional-resources/news-alerts/alerts-bulletins/investor-bulletin-index-funds",
+  "url": "https://www.investor.gov/introduction-investing/general-resources/news-alerts/alerts-bulletins/investor-bulletins-26",
   "tags": [
    "invest"
   ],

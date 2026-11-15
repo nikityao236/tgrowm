@@ -1,14 +1,14 @@
 // TGM — To Grow Money. Экраны и действия.
-import { t, setLang, getLang, LANGS, LANG_NAMES } from './i18n.js?v=0.9.2';
-import { store } from './store.js?v=0.9.2';
-import * as C from './calc.js?v=0.9.2';
-import { snd } from './sound.js?v=0.9.2';
-import * as P from './prices.js?v=0.9.2';
-import { LIBRARY } from './library.js?v=0.9.2';
-import { LEARN } from './learn.js?v=0.9.2';
-import * as A from './auth.js?v=0.9.2';
-import { REQUIRE_ACCOUNT, AUTH_DOMAIN, SITE_URL } from '../config.js?v=0.9.2';
-import { TOUR_STEPS, tipPosition } from './tour.js?v=0.9.2';
+import { t, setLang, getLang, LANGS, LANG_NAMES } from './i18n.js?v=0.9.3';
+import { store } from './store.js?v=0.9.3';
+import * as C from './calc.js?v=0.9.3';
+import { snd } from './sound.js?v=0.9.3';
+import * as P from './prices.js?v=0.9.3';
+import { LIBRARY } from './library.js?v=0.9.3';
+import { LEARN } from './learn.js?v=0.9.3';
+import * as A from './auth.js?v=0.9.3';
+import { REQUIRE_ACCOUNT, AUTH_DOMAIN, SITE_URL } from '../config.js?v=0.9.3';
+import { TOUR_STEPS, tipPosition } from './tour.js?v=0.9.3';
 
 const CURRENCIES = ['USD', 'BYN', 'RUB', 'PLN', 'UAH', 'EUR'];
 const LOCALE = { ru: 'ru-RU', en: 'en-US', pl: 'pl-PL', es: 'es-ES' };
@@ -16,7 +16,7 @@ const CATS = ['food', 'home', 'utilities', 'transport', 'comm', 'health', 'fun',
 const NEED_CATS = new Set(['food', 'home', 'utilities', 'transport', 'comm', 'health']);
 const STEPS = ['lang', 'cur', 'auth', 'income', 'debts', 'cushion', 'needs', 'food', 'fun', 'waste', 'mode', 'plan'];
 const OB = 'tgm_ob';
-const APP_VERSION = '0.9.2 (этап 3, часы по дням и заработок по месяцам)';
+const APP_VERSION = '0.9.3 (этап 3, проверка и синхронизация)';
 const ui = { screen: 'today', modal: null, step: 0, draft: null, cal: { month: null, sel: null }, acc: { tab: 'signup' }, fg: {}, rc: {}, busy: false, afterAuth: false };
 const $app = document.getElementById('app');
 const S = () => store.state;
@@ -634,7 +634,8 @@ ${hour ? field(t('q_rate'), bindInput('hourlyRate', d, true)) + field(t('q_estim
     body = `<h2>${t('mode_title')}</h2>${C.MODES.map((m) => `<button class="opt card-opt ${d.mode === m ? 'sel' : ''}" data-act="pickMode" data-v="${m}"><b>${t('mode_' + m)}</b><span>${t('mode_' + m + '_d')}</span></button>`).join('')}<p class="muted small">${t('mode_note')}</p>`;
   } else if (step === 'plan') {
     const pc = draftPlan();
-    body = `<h2>${t('plan_title')}</h2><p class="muted">${t('plan_text')}</p>${C.BASKETS.map((k) => `<div class="prow"><span>${BNAME(k)} ${helpBtn(k)}</span><b>${Math.round(pc[k] * 100)}%</b>${bar(pc[k], 'b-' + k)}</div>`).join('')}${pc.noSurplus ? `<p class="warnbox">${t('plan_none')}</p>` : ''}<p class="muted small">${t('pilot_note')}</p>`;
+    const rp = C.roundedPercents(pc);
+    body = `<h2>${t('plan_title')}</h2><p class="muted">${t('plan_text')}</p>${C.BASKETS.map((k) => `<div class="prow"><span>${BNAME(k)} ${helpBtn(k)}</span><b>${rp[k]}%</b>${bar(pc[k], 'b-' + k)}</div>`).join('')}${pc.noSurplus ? `<p class="warnbox">${t('plan_none')}</p>` : ''}<p class="muted small">${t('pilot_note')}</p>`;
   }
   const last = ui.step === STEPS.length - 1;
   return `<main class="ob"><div class="dots">${STEPS.map((_, i) => `<i class="${i <= ui.step ? 'on' : ''}"></i>`).join('')}</div><section class="card">${body}</section>
@@ -650,8 +651,8 @@ function readDebt(p) {
   if (rate === null || minPay === null) return { err: t('err_number') };
   const dayRaw = val(p + 'day').trim();
   const day = dayRaw === '' ? 0 : parseInt(dayRaw, 10);
-  if (!(day >= 0 && day <= 31)) return { err: t('err_number') };
-  return { debt: { id: uid(), name, balance, rate, minPay, day } };
+  if (!(day >= 0 && day <= 31)) return { err: t('err_debt_day') };
+  return { debt: { id: uid(), name, balance, rate, minPay, day, since: C.ymd() } };
 }
 function validateStep(step) {
   const d = ui.draft.profile;
@@ -845,13 +846,14 @@ function vBaskets() {
   const today = C.ymd();
   const st = C.basketStats(S(), today);
   const lab = { needs: t('lab_spent'), joy: t('lab_spent'), debts: t('lab_paid') };
+  const rp = C.roundedPercents(Object.fromEntries(C.BASKETS.map((q) => [q, st[q].pct])));
   const cards = C.BASKETS.map((k) => {
     const x = st[k];
     let lines = kv(t('lab_plan'), money(x.planned)) + kv(x.spendable ? t('lab_in') : t('lab_month_saved'), money(x.allocated), x.allocated > 0 ? 'good' : '');
     if (x.spendable) lines += kv(lab[k], money(x.spent)) + kv(t('lab_left'), money(x.left), x.left < 0 ? 'amber' : '');
     if (k === 'cushion') lines += kv(t('lab_total'), money(C.cushionTotal(S())));
     if (k === 'invest') lines += kv(t('lab_total'), money(C.investTotal(S()))) + kv(t('inv_available'), money(C.investAvailable(S())), C.investAvailable(S()) < 0 ? 'amber' : '') + `<button class="btn ghost" data-act="goInvest">${t('invest_title')} →</button>`;
-    return `<section class="card basket"><div class="between"><h3>${BNAME(k)} ${helpBtn(k)}</h3><b>${Math.round(x.pct * 100)}%</b></div>${bar(x.progress, 'b-' + k)}${lines}</section>`;
+    return `<section class="card basket"><div class="between"><h3>${BNAME(k)} ${helpBtn(k)}</h3><b>${rp[k]}%</b></div>${bar(x.progress, 'b-' + k)}${lines}</section>`;
   }).join('');
   const closed = S().closings.filter((c) => !c.skipped).slice(-6).reverse();
   const hist = closed.length
@@ -1329,7 +1331,7 @@ ${field(t('inv_amount'), '<input id="m_amount" inputmode="decimal" autocomplete=
   } else if (m.type === 'help') {
     if (!C.BASKETS.includes(m.k)) { ui.modal = null; return ''; }
     const pc = C.plan(S(), today);
-    inner = `<h3>${BNAME(m.k)} <small class="muted">${Math.round(pc[m.k] * 100)}%</small></h3><p>${t('help_' + m.k)}</p><div class="foot"><span></span><button class="btn primary" data-act="closeModal">${t('close')}</button></div>`;
+    inner = `<h3>${BNAME(m.k)} <small class="muted">${C.roundedPercents(pc)[m.k]}%</small></h3><p>${t('help_' + m.k)}</p><div class="foot"><span></span><button class="btn primary" data-act="closeModal">${t('close')}</button></div>`;
   } else if (m.type === 'closing') {
     const rule = S().profile.rolloverRule || 'split';
     const rows = m.list.map((r) => `<div class="cl"><b>${esc(dfmt(r.month + '-01', { month: 'long', year: 'numeric' }))}</b>${kv(t('close_joy'), money(r.joyLeft))}${kv(t('close_kept'), money(r.keep))}${kv(t('close_needs'), money(r.needsLeft))}${kv(t('close_moved', { b: BNAME(r.basket) }), money(r.moved), 'good')}</div>`).join('');
@@ -1530,6 +1532,12 @@ function exportCsv() {
   s.transfers.forEach((x) => rows.push(['rollover', x.date, x.amount, `${x.from}->${x.to}`, '', x.month]));
   (s.purchases || []).forEach((p) => rows.push(['purchase', p.date, p.amount, p.name, `from ${p.source}`, '']));
   (s.loans || []).forEach((l) => { rows.push(['loan_given', l.date, l.amount, l.person, `from ${l.source}, rate ${l.rate || 0}%`, l.due ? 'due ' + l.due : '']); (l.repay || []).forEach((r) => rows.push(['loan_repayment', r.date, r.amount, l.person, '', ''])); });
+  rows.push(['profile', s.profile.startDate || '', s.profile.incomeType === 'hour' ? s.profile.hourlyRate : s.profile.incomeAmount, s.profile.incomeType, `currency ${s.profile.currency}, mode ${s.profile.mode}`, `cushion at start ${s.profile.cushion || 0}, fun ${s.profile.monthlyFun || 0}`]);
+  Object.entries(s.profile.needs || {}).forEach(([k, v]) => rows.push(['profile_need', '', v, k, '', '']));
+  s.noSpendDays.forEach((day) => rows.push(['no_spend_day', day, '', '', '', '']));
+  s.holdings.forEach((h) => { if (h.currentValue != null) rows.push(['investment_value', h.valueDate || '', h.currentValue, h.name, '', '']); });
+  (s.goals || []).forEach((g) => { rows.push(['goal', '', g.target, g.name, g.deadline ? 'deadline ' + g.deadline : '', '']); (g.adds || []).forEach((a) => rows.push(['goal_contribution', a.date, a.amount, g.name, `from ${a.source}`, ''])); });
+  (s.reminders || []).forEach((r) => rows.push(['reminder', '', r.amount, r.name, `day ${r.day}`, r.active === false ? 'off' : 'active']));
   const csv = '﻿' + rows.map((r) => r.map(csvCell).join(',')).join('\r\n');
   const a = document.createElement('a');
   a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
@@ -1777,13 +1785,13 @@ const actions = {
     const date = readDate('m_date');
     const editId = val('m_edit');
     if (editId) {
-      store.update((s) => { const x = s.expenses.find((y) => y.id === editId); if (x) { x.amount = amount; x.category = category; x.kind = kind; x.note = note; x.date = date; } });
+      store.update((s) => { const x = s.expenses.find((y) => y.id === editId); if (x) { x.amount = amount; x.category = category; x.kind = kind; x.note = note; x.date = date; s.noSpendDays = s.noSpendDays.filter((n) => n !== date); } });
       ui.modal = null; render(); toast(t('toast_saved'));
       return;
     }
     const id = uid();
     snd.play('coin');
-    store.update((s) => { s.expenses.push({ id, ts: Date.now(), date, amount, category, kind, note }); });
+    store.update((s) => { s.expenses.push({ id, ts: Date.now(), date, amount, category, kind, note }); s.noSpendDays = s.noSpendDays.filter((n) => n !== date); });
     const today = C.ymd();
     const over = kind === 'want' && date === today && C.todayLimit(S(), today).over;
     ui.modal = null; render();
@@ -1882,6 +1890,7 @@ const actions = {
   },
   noSpend() {
     const d = C.ymd();
+    if (S().expenses.some((e) => e.date === d)) return toast(t('nospend_has_exp'), true);
     if (!S().noSpendDays.includes(d)) store.update((s) => { s.noSpendDays.push(d); });
     snd.play('comfort'); render(); toast(t('toast_nospend'));
   },
@@ -2050,7 +2059,7 @@ const actions = {
     if (amount === null) return toast(t('err_number'), true);
     const day = parseInt(val('m_day').trim(), 10);
     if (!(day >= 1 && day <= 31)) return toast(t('rem_err_day'), true);
-    store.update((s) => { s.reminders.push({ id: uid(), name, amount, day, active: true, paidMonths: [] }); });
+    store.update((s) => { s.reminders.push({ id: uid(), name, amount, day, active: true, paidMonths: [], since: C.ymd() }); });
     ui.modal = null; render(); toast(t('toast_saved'));
   },
   remPaid(el) {
@@ -2306,7 +2315,11 @@ store.subscribe((reason) => {
   checkClosings();
   proceedAfterAuth();
 });
-document.addEventListener('visibilitychange', () => { if (!document.hidden && !ui.modal) checkClosings(); });
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) return;
+  if (!ui.modal && !ui.tour) store.refresh(); // вернулись в приложение: подтягиваем правки с других устройств
+  if (!ui.modal) checkClosings();
+});
 
 // ---------- запуск ----------
 // Слабый телефон (мало памяти или 2 ядра): постоянные анимации сцены выключаются классом lite. ?lite=1 включает, ?lite=0 выключает для проверки.

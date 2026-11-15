@@ -1,6 +1,6 @@
 // Все тексты интерфейса в одном месте: русский, английский, польский, испанский.
 // Тексты входа и аккаунта лежат в js/authtext.js и добавляются к словарю ниже.
-import { AUTH_T } from './authtext.js?v=0.9.2';
+import { AUTH_T } from './authtext.js?v=0.9.3';
 export const LANGS = ['ru', 'en', 'pl', 'es'];
 export const LANG_NAMES = { ru: 'Русский', en: 'English', pl: 'Polski', es: 'Español' };
 
@@ -52,6 +52,7 @@ const D = {
     rem_mine: 'Мои напоминания', rem_mine_empty: 'Своих напоминаний нет: добавь аренду, коммуналку или подписки.', rem_add: 'Добавить напоминание', rem_name: 'Что платить', rem_name_ph: 'например: аренда',
     rem_day: 'День месяца (1-31)', rem_amount: 'Сумма (если известна)', rem_paid: 'Оплатил', rem_today: 'сегодня', rem_tomorrow: 'завтра', rem_in: 'через {n} дн.', rem_overdue: 'просрочено на {n} дн.',
     rem_soon: 'Скоро платежи', rem_all: 'Все платежи', rem_gnome: '{name}: {when}. Напоминаю заранее, чтобы платёж не застал врасплох.', rem_delete_q: 'Удалить напоминание?', rem_err_day: 'Укажи день месяца от 1 до 31',
+    nospend_has_exp: 'Сегодня уже есть траты, поэтому день не может быть «без трат». Удали запись или отметь другой день.', err_debt_day: 'День платежа: число от 1 до 31 (или оставь поле пустым)',
     debtors_mine: 'Мои долги', debtors_owed: 'Мне должны', loans_title: 'Мне должны', loans_total: 'Всего должны тебе',
     loans_hint: 'Записывай, кому и сколько одолжил: сумму, срок и проценты, если договорились. Это личный учёт, а не договор: для крупных сумм лучше расписка или письменная договорённость.',
     loans_empty: 'Пока никто не должен. Одолжил кому-то? Запиши.', loan_add: 'Одолжил', loan_person: 'Кому', loan_person_ph: 'имя или инициалы', loan_amount: 'Сколько одолжил',
@@ -222,6 +223,7 @@ const D = {
     rem_mine: 'My reminders', rem_mine_empty: 'No reminders of your own: add rent, utilities or subscriptions.', rem_add: 'Add reminder', rem_name: 'What to pay', rem_name_ph: 'e.g. rent',
     rem_day: 'Day of month (1-31)', rem_amount: 'Amount (if known)', rem_paid: 'Paid', rem_today: 'today', rem_tomorrow: 'tomorrow', rem_in: 'in {n} days', rem_overdue: '{n} days overdue',
     rem_soon: 'Payments coming up', rem_all: 'All payments', rem_gnome: '{name}: {when}. A heads-up so the payment does not catch you off guard.', rem_delete_q: 'Delete this reminder?', rem_err_day: 'Enter a day of the month from 1 to 31',
+    nospend_has_exp: 'There are already expenses today, so it cannot be a no-spend day. Delete the entry or mark another day.', err_debt_day: 'Payment day: a number from 1 to 31 (or leave it empty)',
     debtors_mine: 'My debts', debtors_owed: 'Owed to me', loans_title: 'Owed to me', loans_total: 'Total owed to you',
     loans_hint: 'Record who you lent money to: the amount, the deadline and interest if you agreed. This is personal tracking, not a contract: for larger sums a receipt or a written agreement is better.',
     loans_empty: 'Nobody owes you yet. Lent someone money? Record it.', loan_add: 'I lent', loan_person: 'To whom', loan_person_ph: 'name or initials', loan_amount: 'How much you lent',
@@ -392,6 +394,7 @@ const D = {
     rem_mine: 'Moje przypomnienia', rem_mine_empty: 'Nie masz własnych przypomnień: dodaj czynsz, opłaty lub subskrypcje.', rem_add: 'Dodaj przypomnienie', rem_name: 'Co zapłacić', rem_name_ph: 'np. czynsz',
     rem_day: 'Dzień miesiąca (1-31)', rem_amount: 'Kwota (jeśli znana)', rem_paid: 'Zapłacone', rem_today: 'dziś', rem_tomorrow: 'jutro', rem_in: 'za {n} dni', rem_overdue: 'po terminie o {n} dni',
     rem_soon: 'Wkrótce płatności', rem_all: 'Wszystkie płatności', rem_gnome: '{name}: {when}. Przypominam wcześniej, żeby płatność cię nie zaskoczyła.', rem_delete_q: 'Usunąć to przypomnienie?', rem_err_day: 'Podaj dzień miesiąca od 1 do 31',
+    nospend_has_exp: 'Dziś są już wydatki, więc to nie może być dzień bez wydatków. Usuń wpis albo oznacz inny dzień.', err_debt_day: 'Dzień płatności: liczba od 1 do 31 (albo zostaw puste)',
     debtors_mine: 'Moje długi', debtors_owed: 'Dłużnicy', loans_title: 'Dłużnicy', loans_total: 'Razem winni tobie',
     loans_hint: 'Zapisuj, komu i ile pożyczyłeś: kwotę, termin i odsetki, jeśli się umówiliście. To osobista ewidencja, nie umowa: przy większych kwotach lepsze jest pokwitowanie lub pisemne ustalenie.',
     loans_empty: 'Na razie nikt ci nic nie jest winien. Pożyczyłeś komuś? Zapisz.', loan_add: 'Pożyczyłem', loan_person: 'Komu', loan_person_ph: 'imię lub inicjały', loan_amount: 'Ile pożyczyłeś',
@@ -562,6 +565,7 @@ const D = {
     rem_mine: 'Mis recordatorios', rem_mine_empty: 'No tienes recordatorios propios: añade alquiler, suministros o suscripciones.', rem_add: 'Añadir recordatorio', rem_name: 'Qué pagar', rem_name_ph: 'p. ej. alquiler',
     rem_day: 'Día del mes (1-31)', rem_amount: 'Importe (si se conoce)', rem_paid: 'Pagado', rem_today: 'hoy', rem_tomorrow: 'mañana', rem_in: 'en {n} días', rem_overdue: 'vencido hace {n} días',
     rem_soon: 'Pagos próximos', rem_all: 'Todos los pagos', rem_gnome: '{name}: {when}. Te aviso con tiempo para que el pago no te pille por sorpresa.', rem_delete_q: '¿Eliminar este recordatorio?', rem_err_day: 'Indica un día del mes del 1 al 31',
+    nospend_has_exp: 'Hoy ya hay gastos, así que no puede ser un día sin gastos. Borra el registro o marca otro día.', err_debt_day: 'Día de pago: un número del 1 al 31 (o déjalo vacío)',
     debtors_mine: 'Mis deudas', debtors_owed: 'Me deben', loans_title: 'Me deben', loans_total: 'Total que te deben',
     loans_hint: 'Anota a quién prestaste dinero: la cantidad, el plazo y los intereses si lo acordaron. Es un control personal, no un contrato: para sumas grandes es mejor un recibo o un acuerdo por escrito.',
     loans_empty: 'Nadie te debe nada por ahora. ¿Prestaste a alguien? Anótalo.', loan_add: 'Presté', loan_person: 'A quién', loan_person_ph: 'nombre o iniciales', loan_amount: 'Cuánto prestaste',

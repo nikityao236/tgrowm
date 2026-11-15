@@ -1,7 +1,8 @@
 // Хранилище: всегда сохраняет локально, а если облако подключено и человек вошёл, синхронизирует с Supabase.
-import { SUPABASE_URL, SUPABASE_ANON_KEY, AUTH_DOMAIN } from '../config.js?v=0.9.2';
-import { ymd } from './calc.js?v=0.9.2';
-import { identToEmail, normIdent, isEmail } from './auth.js?v=0.9.2';
+import { SUPABASE_URL, SUPABASE_ANON_KEY, AUTH_DOMAIN } from '../config.js?v=0.9.3';
+import { ymd } from './calc.js?v=0.9.3';
+import { identToEmail, normIdent, isEmail } from './auth.js?v=0.9.3';
+import { mergeStates } from './merge.js?v=0.9.3';
 
 const LS = 'tgm_state_v1';
 const SUPABASE_ESM = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/+esm';
@@ -86,48 +87,82 @@ const OWNER_LS = 'tgm_owner';
 function ownerRead() { try { return localStorage.getItem(OWNER_LS) || ''; } catch { return ''; } }
 function ownerWrite(id) { try { localStorage.setItem(OWNER_LS, id); } catch { /* ничего */ } }
 
+// «База» синхронизации: метка времени (updatedAt) того состояния, которое телефон и облако в последний раз точно знали вместе.
+// По ней видно, менялись ли данные с одной стороны или с обеих сразу.
+const BASE_LS = 'tgm_base';
+function baseRead() { try { return Number(localStorage.getItem(BASE_LS)) || 0; } catch { return 0; } }
+function baseWrite(n) { try { localStorage.setItem(BASE_LS, String(n || 0)); } catch { /* ничего */ } }
+let retryTimer = null;
+let pushFails = 0;
+
+async function fetchCloud() {
+  const { data, error } = await client.from('tgm_state').select('data,updated_at').eq('user_id', store.cloud.user.id).maybeSingle();
+  if (error) throw error;
+  return data && data.data ? data.data : null;
+}
+function backupLocal() {
+  const l = store.state;
+  if (l.updatedAt) { try { localStorage.setItem(LS + '_backup', JSON.stringify(l)); } catch { /* ignore */ } }
+}
+// Сверяет телефон с облаком. Возвращает: 'cloud' (взяли облако), 'same' (одинаково), 'merged' (слили две правки, надо отправить), 'push' (отправить своё).
+function reconcile(remote) {
+  const uid = store.cloud.user.id;
+  const local = store.state;
+  if (!remote) return 'push';
+  const rU = remote.updatedAt || 0;
+  const lU = local.updatedAt || 0;
+  // Данные на телефоне могли принадлежать другому аккаунту (или никому, если их вели до входа): чужие данные не должны попасть в этот аккаунт
+  if (ownerRead() !== uid) { backupLocal(); store.replace(remote); ownerWrite(uid); baseWrite(rU); return 'cloud'; }
+  if (rU === lU) { baseWrite(rU); return 'same'; }
+  const base = baseRead();
+  // и облако, и телефон менялись после последней общей точки: сливаем, ничего не теряя
+  if (rU > base && lU > base) { backupLocal(); store.replace(mergeStates(local, remote)); return 'merged'; }
+  if (rU > lU) { backupLocal(); store.replace(remote); baseWrite(rU); return 'cloud'; }
+  return 'push';
+}
+
 async function pull() {
   try {
-    const { data, error } = await client.from('tgm_state').select('data,updated_at').eq('user_id', store.cloud.user.id).maybeSingle();
-    if (error) throw error;
-    const local = store.state;
-    const uid = store.cloud.user.id;
-    // Данные на телефоне могли принадлежать другому аккаунту (или никому, если их вели до входа). Если в облаке этого аккаунта уже что-то есть,
-    // а телефон его ещё не синхронизировал, берём облако: чужие данные не должны перезаписать чужой аккаунт.
-    const foreign = ownerRead() !== uid;
-    if (data && data.data && (foreign || (data.data.updatedAt || 0) > (local.updatedAt || 0))) {
-      // Старую локальную копию сохраняем про запас
-      if (local.updatedAt) { try { localStorage.setItem(LS + '_backup', JSON.stringify(local)); } catch { /* ignore */ } }
-      store.replace(data.data);
-      ownerWrite(uid);
-      store.cloud.status = 'synced';
-      return;
-    }
-    await push();
-  } catch { store.cloud.status = 'pending'; }
+    const r = reconcile(await fetchCloud());
+    if (r === 'cloud' || r === 'same') { store.cloud.status = 'synced'; return; }
+    await push(); // 'push' и 'merged'
+  } catch { store.cloud.status = 'pending'; scheduleRetry(); }
 }
 
 async function push() {
   if (!client || !store.cloud.user) return;
-  if (!navigator.onLine) { store.cloud.status = 'pending'; notify('cloud'); return; }
+  if (navigator.onLine === false) { store.cloud.status = 'pending'; notify('cloud'); return; }
   try {
+    // перед отправкой смотрим, не пришли ли в облако правки с другого устройства: чужое не затираем
+    const r = reconcile(await fetchCloud());
+    if (r === 'cloud' || r === 'same') { store.cloud.status = 'synced'; pushFails = 0; notify('cloud'); return; }
     const { error } = await client.from('tgm_state').upsert({
       user_id: store.cloud.user.id, data: store.state, updated_at: new Date().toISOString(),
     });
     if (error) throw error;
     ownerWrite(store.cloud.user.id);
+    baseWrite(store.state.updatedAt);
     store.cloud.status = 'synced';
-  } catch { store.cloud.status = 'pending'; }
+    pushFails = 0;
+  } catch { store.cloud.status = 'pending'; scheduleRetry(); }
   notify('cloud');
+}
+
+// После сбоя (сервер не ответил) пробуем ещё раз через 5, 10, 15 секунд и так до шести попыток, а не ждём следующей правки
+function scheduleRetry() {
+  clearTimeout(retryTimer);
+  if (!client || !store.cloud.user || pushFails >= 6) return;
+  pushFails += 1;
+  retryTimer = setTimeout(push, Math.min(60000, 5000 * pushFails));
 }
 
 function schedulePush() {
   if (!client || !store.cloud.user) return;
   store.cloud.status = 'pending';
   clearTimeout(pushTimer);
+  pushFails = 0;
   pushTimer = setTimeout(push, 1000);
 }
-
 async function setUser(u) {
   const changed = (store.cloud.user && store.cloud.user.id) !== (u && u.id);
   store.cloud.user = u;
@@ -177,6 +212,19 @@ export const store = {
       notify('cloud');
     }
   },
+  // Подтянуть правки с других устройств (вызывается, когда человек вернулся в приложение)
+  async refresh() {
+    if (!client || !this.cloud.user || navigator.onLine === false) return;
+    try {
+      if (this.cloud.status === 'pending') { await push(); return; }
+      const r = reconcile(await fetchCloud());
+      if (r === 'cloud') { this.cloud.status = 'synced'; notify('cloud'); }
+      else if (r === 'merged' || r === 'push') await push();
+    } catch { /* тихо: обновимся при следующем заходе */ }
+  },
+  // Для тестов
+  _push: () => push(),
+  _pull: () => pull(),
   // Для тестов: подставить поддельного клиента облака вместо настоящего
   _useClient(c) { client = c; this.cloud.enabled = Boolean(c); this.cloud.ready = true; },
   // Вызов серверной функции tgm-recovery. Возвращает { data } или { error: { code, status } }; код ошибки приходит с сервера
@@ -263,7 +311,7 @@ export const store = {
     this.cloud.user = null;
     this.cloud.recovery = null;
     this.cloud.status = 'local';
-    try { localStorage.removeItem(LS); localStorage.removeItem(LS + '_backup'); localStorage.removeItem(OWNER_LS); localStorage.removeItem('tgm_ob'); } catch { /* ignore */ }
+    try { localStorage.removeItem(LS); localStorage.removeItem(LS + '_backup'); localStorage.removeItem(OWNER_LS); localStorage.removeItem(BASE_LS); localStorage.removeItem('tgm_ob'); } catch { /* ignore */ }
     this.state = defaults();
     notify('cloud');
     return { ok: true };
@@ -276,7 +324,7 @@ export const store = {
       try { await client.auth.signOut(); } catch { /* ignore */ }
     }
     // На телефоне стираем всё, что связано с аккаунтом: данные, метку владельца, подсказки и последний логин
-    try { ['tgm_ob', LS + '_backup', LS, OWNER_LS, 'tgm_last_ident', 'tgm_hint_v1'].forEach((k) => localStorage.removeItem(k)); } catch { /* ignore */ }
+    try { ['tgm_ob', LS + '_backup', LS, OWNER_LS, BASE_LS, 'tgm_last_ident', 'tgm_hint_v1'].forEach((k) => localStorage.removeItem(k)); } catch { /* ignore */ }
     this.state = defaults();
   },
 };

@@ -20,7 +20,14 @@ const TPL_NEEDS = { withDebts: { calm: 0.55, mid: 0.5, hard: 0.5 }, free: 0.5 };
 
 export const round2 = (n) => Math.round((n + Number.EPSILON) * 100) / 100;
 export const num = (v) => {
-  const n = Number(String(v ?? '').replace(/\s/g, '').replace(',', '.'));
+  let s = String(v ?? '').replace(/[\s\u00a0\u202f]/g, '');
+  if (s.includes(',') && s.includes('.')) {
+    // и точка, и запятая: последняя из них десятичная, другая разделяет тысячи («1,234.56» и «1.234,56»)
+    const dec = s.lastIndexOf(',') > s.lastIndexOf('.') ? ',' : '.';
+    const thousands = dec === ',' ? '.' : ',';
+    s = s.split(thousands).join('').replace(dec, '.');
+  } else s = s.replace(',', '.');
+  const n = Number(s);
   return Number.isFinite(n) ? n : NaN;
 };
 // Сумма больше нуля и разумная, иначе null
@@ -173,6 +180,17 @@ export function percentages({ mode = 'mid', debts = false, income = 0, needs = 0
   return out;
 }
 
+// Целые проценты, которые в сумме дают ровно 100 (метод наибольших остатков), чтобы на экране не получалось 99% или 101%
+export function roundedPercents(pc, keys = BASKETS) {
+  const raw = keys.map((k) => (Number(pc[k]) || 0) * 100);
+  const total = raw.reduce((a, b) => a + b, 0);
+  if (total < 99.5 || total > 100.5) return Object.fromEntries(keys.map((k, i) => [k, Math.round(raw[i])]));
+  const fl = raw.map(Math.floor);
+  let rest = 100 - fl.reduce((a, b) => a + b, 0);
+  raw.map((x, i) => [x - fl[i], i]).sort((a, b) => b[0] - a[0]).forEach(([, i]) => { if (rest > 0) { fl[i] += 1; rest -= 1; } });
+  return Object.fromEntries(keys.map((k, i) => [k, fl[i]]));
+}
+
 // Делит сумму по корзинам до копейки (остаток от округления уходит в самую большую корзину)
 export function splitAmount(amount, pcts) {
   const out = {};
@@ -228,8 +246,8 @@ export function fixedNeeds(state, today = ymd()) {
 }
 
 // Сколько за месяц запланировано в корзину k: нужды ограничены своей суммой, остальное делится из денег сверх нужд
-export function plannedFor(state, today, k, pc = plan(state, today)) {
-  const base = monthBase(state, today);
+export function plannedFor(state, today, k, pc = plan(state, today), baseOverride = null) {
+  const base = baseOverride != null ? baseOverride : monthBase(state, today);
   const fx = fixedNeeds(state, today);
   if (!fx || pc.needs >= 1) return round2(base * pc[k]);
   const needsPart = Math.min(fx, base);
@@ -390,8 +408,12 @@ export function planClosing(state, m) {
   const carry = sum((state.transfers || []).filter((x) => x.to === 'joy' && inM(x.date)), (x) => x.amount);
   const wants = sum(state.expenses.filter((e) => e.kind === 'want' && inM(e.date)), (e) => e.amount);
   const needSpent = sum(state.expenses.filter((e) => e.kind === 'need' && inM(e.date)), (e) => e.amount);
-  const joyLeft = Math.max(0, round2(plannedFor(state, last, 'joy', pc) + carry - wants));
-  const needsLeft = Math.max(0, round2(plannedFor(state, last, 'needs', pc) - needSpent));
+  // Если за месяц записан доход, остаток считаем от реально пришедших денег, а не от ожидаемых: иначе при неполной зарплате
+  // приложение «перенесёт» деньги, которых не было. Если доходов не записано совсем, считаем по плану, как раньше.
+  const got = sum(state.incomes.filter((i) => inM(i.date)), (i) => i.amount);
+  const baseOv = got > 0 ? got : null;
+  const joyLeft = Math.max(0, round2(plannedFor(state, last, 'joy', pc, baseOv) + carry - wants));
+  const needsLeft = Math.max(0, round2(plannedFor(state, last, 'needs', pc, baseOv) - needSpent));
   const keep = round2(joyLeft * ROLLOVER_RULES[rule]);
   const basket = priorityBasket(state, last);
   const transfers = [];
@@ -458,22 +480,25 @@ export function upcomingPayments(state, today = ymd(), horizon = 31) {
   const mk = monthOf(today);
   const nx = monthAdd(mk, 1);
   const out = [];
-  const push = (kind, id, name, amount, day, paidNow) => {
+  const push = (kind, id, name, amount, day, paidNow, since) => {
     if (!(day >= 1 && day <= 31)) return;
     const thisM = dueDate(mk, day);
     let date = thisM;
     let overdue = false;
-    if (paidNow) date = dueDate(nx, day);
+    // платёж добавлен (или учёт начат) уже после этого дня месяца: этот месяц не считаем просроченным, ждём следующий
+    const base = since || (state.profile && state.profile.startDate) || '';
+    const beforeStart = Boolean(base) && thisM < base && today >= base;
+    if (paidNow || beforeStart) date = dueDate(nx, day);
     else if (thisM < today) { if (diffDays(thisM, today) <= 10) overdue = true; else date = dueDate(nx, day); }
     const days = diffDays(today, date);
     if (!overdue && days > horizon) return;
     out.push({ kind, id, name, amount, date, days, overdue });
   };
   (state.debts || []).filter((d) => d.balance > 0).forEach((d) => {
-    push('debt', d.id, d.name, Number(d.minPay) || 0, Number(d.day) || 0, (state.payments || []).some((p) => p.debtId === d.id && monthOf(p.date) === mk));
+    push('debt', d.id, d.name, Number(d.minPay) || 0, Number(d.day) || 0, (state.payments || []).some((p) => p.debtId === d.id && monthOf(p.date) === mk), d.since);
   });
   (state.reminders || []).filter((r) => r.active !== false).forEach((r) => {
-    push('custom', r.id, r.name, Number(r.amount) || 0, Number(r.day) || 0, (r.paidMonths || []).includes(mk));
+    push('custom', r.id, r.name, Number(r.amount) || 0, Number(r.day) || 0, (r.paidMonths || []).includes(mk), r.since);
   });
   // Срок возврата чужого долга тебе: тоже показываем (incoming), чтобы вовремя напомнить
   (state.loans || []).forEach((l) => {
