@@ -1,14 +1,14 @@
 // TGM — To Grow Money. Экраны и действия.
-import { t, setLang, getLang, LANGS, LANG_NAMES } from './i18n.js?v=0.9.0';
-import { store } from './store.js?v=0.9.0';
-import * as C from './calc.js?v=0.9.0';
-import { snd } from './sound.js?v=0.9.0';
-import * as P from './prices.js?v=0.9.0';
-import { LIBRARY } from './library.js?v=0.9.0';
-import { LEARN } from './learn.js?v=0.9.0';
-import * as A from './auth.js?v=0.9.0';
-import { REQUIRE_ACCOUNT, AUTH_DOMAIN, SITE_URL } from '../config.js?v=0.9.0';
-import { TOUR_STEPS, tipPosition } from './tour.js?v=0.9.0';
+import { t, setLang, getLang, LANGS, LANG_NAMES } from './i18n.js?v=0.9.1';
+import { store } from './store.js?v=0.9.1';
+import * as C from './calc.js?v=0.9.1';
+import { snd } from './sound.js?v=0.9.1';
+import * as P from './prices.js?v=0.9.1';
+import { LIBRARY } from './library.js?v=0.9.1';
+import { LEARN } from './learn.js?v=0.9.1';
+import * as A from './auth.js?v=0.9.1';
+import { REQUIRE_ACCOUNT, AUTH_DOMAIN, SITE_URL } from '../config.js?v=0.9.1';
+import { TOUR_STEPS, tipPosition } from './tour.js?v=0.9.1';
 
 const CURRENCIES = ['USD', 'BYN', 'RUB', 'PLN', 'UAH', 'EUR'];
 const LOCALE = { ru: 'ru-RU', en: 'en-US', pl: 'pl-PL', es: 'es-ES' };
@@ -16,7 +16,7 @@ const CATS = ['food', 'home', 'utilities', 'transport', 'comm', 'health', 'fun',
 const NEED_CATS = new Set(['food', 'home', 'utilities', 'transport', 'comm', 'health']);
 const STEPS = ['lang', 'cur', 'auth', 'income', 'debts', 'cushion', 'needs', 'food', 'fun', 'waste', 'mode', 'plan'];
 const OB = 'tgm_ob';
-const APP_VERSION = '0.9.0 (этап 3, аккаунты)';
+const APP_VERSION = '0.9.1 (этап 3, аккаунты и подсказки про доход)';
 const ui = { screen: 'today', modal: null, step: 0, draft: null, cal: { month: null, sel: null }, acc: { tab: 'signup' }, fg: {}, rc: {}, busy: false, afterAuth: false };
 const $app = document.getElementById('app');
 const S = () => store.state;
@@ -1237,7 +1237,7 @@ ${field(t('note'), `<input id="m_note" maxlength="120" autocomplete="off" value=
   } else if (m.type === 'income') {
     const edi = m.edit ? S().incomes.find((x) => x.id === m.edit) : null;
     const unpaid = edi ? 0 : C.unpaidEarned(S());
-    inner = `<h3>${t(edi ? 'edit_entry' : 'inc_title')}</h3><form data-submit="saveIncome"><input type="hidden" id="m_edit" value="${esc(edi ? edi.id : '')}">${dateField(edi ? edi.date : (m.date || today))}${field(t('amount'), `<input id="m_amount" inputmode="decimal" data-af autocomplete="off" value="${esc(edi ? String(edi.amount).replace('.', ',') : '')}">`)}${field(t('source'), `<input id="m_source" maxlength="60" placeholder="${esc(t('salary'))}" autocomplete="off" value="${esc(edi ? edi.source : '')}">`)}
+    inner = `<h3>${t(edi ? 'edit_entry' : 'inc_title')}</h3><form data-submit="saveIncome"><input type="hidden" id="m_edit" value="${esc(edi ? edi.id : '')}">${dateField(edi ? edi.date : (m.date || today))}<p class="muted small">${t('inc_date_hint')}</p>${field(t('amount'), `<input id="m_amount" inputmode="decimal" data-af autocomplete="off" value="${esc(edi ? String(edi.amount).replace('.', ',') : '')}">`)}${field(t('source'), `<input id="m_source" maxlength="60" placeholder="${esc(t('salary'))}" autocomplete="off" value="${esc(edi ? edi.source : '')}">`)}
 ${unpaid > 0 ? `<label class="check2"><input type="checkbox" id="m_paid" checked><span>${t('shift_paid')} (${money(unpaid)})</span></label><button type="button" class="btn ghost" data-act="fillEarned" data-v="${unpaid}">${t('fill_earned')}</button>` : ''}${footBtns()}</form>`;
   } else if (m.type === 'loan') {
     const l = m.id ? S().loans.find((x) => x.id === m.id) : null;
@@ -1298,7 +1298,7 @@ ${unpaid > 0 ? `<label class="check2"><input type="checkbox" id="m_paid" checked
     const inc = S().incomes.find((i) => i.id === m.id);
     if (!inc) { ui.modal = null; return ''; }
     const pc = C.plan(S(), today);
-    inner = `<h3>${t('inc_done_title')}: ${money(inc.amount)}</h3>${m.note ? `<p class="warnbox">${esc(m.note)}</p>` : ''}<p class="muted small">${t('inc_check')}</p>
+    inner = `<h3>${t('inc_done_title')}: ${money(inc.amount)}</h3>${m.note ? `<p class="warnbox">${esc(m.note)}</p>` : ''}${C.monthOf(inc.date) !== C.monthOf(today) ? `<p class="warnbox">${t('inc_past_warn')}</p><button class="btn primary" data-act="moveIncomeToday" data-id="${esc(inc.id)}">${t('inc_move_today')}</button>` : ''}<p class="muted small">${t('inc_check')}</p>
 ${C.BASKETS.map((k) => `<label class="check"><input type="checkbox" data-change="toggleDone" data-id="${esc(inc.id)}" data-b="${k}" ${inc.done && inc.done[k] ? 'checked' : ''}><span>${BNAME(k)} · ${Math.round((inc.alloc[k] / (inc.amount || 1)) * 100)}%</span><b>${money(inc.alloc[k])}</b></label>`).join('')}
 ${C.fixedNeeds(S(), today) > 0 && !inc.alloc.needs ? `<p class="muted small">${t('needs_full')}</p>` : ''}${pc.noSurplus ? `<p class="warnbox">${t('plan_none')}</p>` : ''}<div class="foot"><span></span><button class="btn primary" data-act="closeModal">${t('close')}</button></div>`;
   } else if (m.type === 'debt') {
@@ -1821,6 +1821,18 @@ const actions = {
     });
     snd.play('whoosh');
     openModal('incomeDone', { id, note: markPaid ? t('expected_vs', { a: money(unpaid), b: money(amount) }) : '' });
+  },
+  // Деньги пришли в этом месяце, а дата стояла в прошлом: переносим доход на сегодня и заново делим по корзинам
+  moveIncomeToday(el) {
+    const id = el.dataset.id;
+    const cur = S().incomes.find((x) => x.id === id);
+    if (!cur) return;
+    const today = C.ymd();
+    const rest = { ...S(), incomes: S().incomes.filter((x) => x.id !== id) };
+    const alloc = C.allocateIncome(rest, cur.amount, today, today);
+    store.update((s) => { const x = s.incomes.find((y) => y.id === id); if (x) { x.date = today; x.alloc = alloc; x.done = {}; } });
+    ui.modal = { type: 'incomeDone', id };
+    render(); toast(t('inc_moved'));
   },
   toggleDone(el) {
     store.update((s) => { const i = s.incomes.find((x) => x.id === el.dataset.id); if (i) { i.done = i.done || {}; i.done[el.dataset.b] = el.checked; } });

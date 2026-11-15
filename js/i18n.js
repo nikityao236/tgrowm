@@ -1,6 +1,6 @@
 // Все тексты интерфейса в одном месте: русский, английский, польский, испанский.
 // Тексты входа и аккаунта лежат в js/authtext.js и добавляются к словарю ниже.
-import { AUTH_T } from './authtext.js?v=0.9.0';
+import { AUTH_T } from './authtext.js?v=0.9.1';
 export const LANGS = ['ru', 'en', 'pl', 'es'];
 export const LANG_NAMES = { ru: 'Русский', en: 'English', pl: 'Polski', es: 'Español' };
 
@@ -121,7 +121,10 @@ const D = {
     recent: 'Последние записи', recent_empty: 'Пока пусто. Запиши первую трату или доход.', entry_nospend: 'День без трат', entry_payment: 'Платёж по долгу',
     exp_title: 'Новая трата', amount: 'Сумма', category: 'Категория', kind_need: 'Нужда', kind_want: 'Хочу', note: 'Заметка',
     cat_food: 'Еда', cat_home: 'Жильё', cat_transport: 'Транспорт', cat_comm: 'Связь', cat_fun: 'Развлечения', cat_other: 'Другое',
-    inc_title: 'Новый доход', source: 'Источник', inc_done_title: 'Доход разделён', inc_check: 'Отметь корзины, когда переведёшь деньги', cat_income: 'Доход',
+    inc_title: 'Новый доход', source: 'Источник', inc_done_title: 'Доход разделён', inc_check: 'Отметь корзины, когда переведёшь деньги',
+    inc_date_hint: 'Ставь день, когда деньги пришли на карту. За какой месяц ты их заработал, не важно: они пойдут в корзины того месяца, где стоит дата.',
+    inc_past_warn: 'Дата этого дохода в прошлом месяце, поэтому в корзинах этого месяца ничего не изменилось. Если деньги пришли на карту в этом месяце, нажми кнопку ниже.',
+    inc_move_today: 'Деньги пришли в этом месяце: считать на сегодня', inc_moved: 'Доход перенесён на сегодня, корзины этого месяца обновлены', cat_income: 'Доход',
     baskets_title: 'Корзины месяца', lab_spent: 'Потрачено', lab_saved: 'Отложено', lab_paid: 'Выплачено', of: 'из', total_cushion: 'Подушка всего', total_invest: 'Инвестиции всего', total_debts: 'Долги всего',
     debts_title: 'Долги', debts_none: 'Долгов нет. Отлично!', debts_first: 'Платить первым', pay: 'Платёж', pay_title: 'Платёж по долгу', pay_pick: 'Какой долг', balance: 'Остаток', rate_pa: '% в год', debt_title: 'Новый долг',
     invest_title: 'Инвестиции', invest_soon: 'Скоро: цены акций и крипты, портфель по подгруппам и гном-инвестор.', risk: 'Прибыль не гарантируется. Это не индивидуальная инвестиционная консультация.',
@@ -285,7 +288,10 @@ const D = {
     recent: 'Recent entries', recent_empty: 'Nothing yet. Log your first expense or income.', entry_nospend: 'No-spend day', entry_payment: 'Debt payment',
     exp_title: 'New expense', amount: 'Amount', category: 'Category', kind_need: 'Need', kind_want: 'Want', note: 'Note',
     cat_food: 'Food', cat_home: 'Housing', cat_transport: 'Transport', cat_comm: 'Phone', cat_fun: 'Fun', cat_other: 'Other',
-    inc_title: 'New income', source: 'Source', inc_done_title: 'Income split', inc_check: 'Tick each basket once you move the money', cat_income: 'Income',
+    inc_title: 'New income', source: 'Source', inc_done_title: 'Income split', inc_check: 'Tick each basket once you move the money',
+    inc_date_hint: 'Use the day the money reached your card. It does not matter which month you earned it for: it goes into the baskets of the month the date falls in.',
+    inc_past_warn: 'This income is dated in a previous month, so nothing changed in this month\'s baskets. If the money reached your card this month, tap the button below.',
+    inc_move_today: 'The money arrived this month: count it for today', inc_moved: 'Income moved to today, this month\'s baskets are updated', cat_income: 'Income',
     baskets_title: "This month's baskets", lab_spent: 'Spent', lab_saved: 'Set aside', lab_paid: 'Paid', of: 'of', total_cushion: 'Cushion total', total_invest: 'Investments total', total_debts: 'Debts total',
     debts_title: 'Debts', debts_none: 'No debts. Great!', debts_first: 'Pay first', pay: 'Payment', pay_title: 'Debt payment', pay_pick: 'Which debt', balance: 'Balance', rate_pa: '% per year', debt_title: 'New debt',
     invest_title: 'Investments', invest_soon: 'Coming soon: stock and crypto prices, a portfolio by groups and the investor gnome.', risk: 'Profit is not guaranteed. This is not individual investment advice.',
@@ -449,7 +455,10 @@ const D = {
     recent: 'Ostatnie wpisy', recent_empty: 'Na razie pusto. Zapisz pierwszy wydatek lub przychód.', entry_nospend: 'Dzień bez wydatków', entry_payment: 'Spłata długu',
     exp_title: 'Nowy wydatek', amount: 'Kwota', category: 'Kategoria', kind_need: 'Potrzeba', kind_want: 'Chcę', note: 'Notatka',
     cat_food: 'Jedzenie', cat_home: 'Mieszkanie', cat_transport: 'Transport', cat_comm: 'Telefon', cat_fun: 'Rozrywka', cat_other: 'Inne',
-    inc_title: 'Nowy przychód', source: 'Źródło', inc_done_title: 'Przychód podzielony', inc_check: 'Zaznacz koszyki, gdy przelejesz pieniądze', cat_income: 'Przychód',
+    inc_title: 'Nowy przychód', source: 'Źródło', inc_done_title: 'Przychód podzielony', inc_check: 'Zaznacz koszyki, gdy przelejesz pieniądze',
+    inc_date_hint: 'Wpisz dzień, w którym pieniądze wpłynęły na kartę. Za jaki miesiąc je zarobiłeś, nie ma znaczenia: trafią do koszyków miesiąca z tej daty.',
+    inc_past_warn: 'Data tego dochodu jest w poprzednim miesiącu, dlatego w koszykach tego miesiąca nic się nie zmieniło. Jeśli pieniądze wpłynęły w tym miesiącu, kliknij przycisk poniżej.',
+    inc_move_today: 'Pieniądze wpłynęły w tym miesiącu: policz na dziś', inc_moved: 'Dochód przeniesiony na dziś, koszyki tego miesiąca zaktualizowane', cat_income: 'Przychód',
     baskets_title: 'Koszyki miesiąca', lab_spent: 'Wydano', lab_saved: 'Odłożono', lab_paid: 'Spłacono', of: 'z', total_cushion: 'Poduszka razem', total_invest: 'Inwestycje razem', total_debts: 'Długi razem',
     debts_title: 'Długi', debts_none: 'Brak długów. Świetnie!', debts_first: 'Spłać najpierw', pay: 'Spłata', pay_title: 'Spłata długu', pay_pick: 'Który dług', balance: 'Saldo', rate_pa: '% rocznie', debt_title: 'Nowy dług',
     invest_title: 'Inwestycje', invest_soon: 'Wkrótce: ceny akcji i krypto, portfel w grupach i krasnal-inwestor.', risk: 'Zysk nie jest gwarantowany. To nie jest indywidualne doradztwo inwestycyjne.',
@@ -613,7 +622,10 @@ const D = {
     recent: 'Últimos movimientos', recent_empty: 'Aún vacío. Anota tu primer gasto o ingreso.', entry_nospend: 'Día sin gastos', entry_payment: 'Pago de deuda',
     exp_title: 'Nuevo gasto', amount: 'Importe', category: 'Categoría', kind_need: 'Necesidad', kind_want: 'Capricho', note: 'Nota',
     cat_food: 'Comida', cat_home: 'Vivienda', cat_transport: 'Transporte', cat_comm: 'Teléfono', cat_fun: 'Ocio', cat_other: 'Otro',
-    inc_title: 'Nuevo ingreso', source: 'Origen', inc_done_title: 'Ingreso repartido', inc_check: 'Marca cada cesta cuando muevas el dinero', cat_income: 'Ingreso',
+    inc_title: 'Nuevo ingreso', source: 'Origen', inc_done_title: 'Ingreso repartido', inc_check: 'Marca cada cesta cuando muevas el dinero',
+    inc_date_hint: 'Pon el día en que el dinero llegó a tu tarjeta. No importa de qué mes sea lo que ganaste: va a las cestas del mes de esa fecha.',
+    inc_past_warn: 'Este ingreso tiene fecha de un mes anterior, por eso en las cestas de este mes no cambió nada. Si el dinero llegó este mes, pulsa el botón de abajo.',
+    inc_move_today: 'El dinero llegó este mes: contarlo para hoy', inc_moved: 'Ingreso movido a hoy, las cestas de este mes se actualizaron', cat_income: 'Ingreso',
     baskets_title: 'Cestas del mes', lab_spent: 'Gastado', lab_saved: 'Apartado', lab_paid: 'Pagado', of: 'de', total_cushion: 'Colchón total', total_invest: 'Inversiones total', total_debts: 'Deudas total',
     debts_title: 'Deudas', debts_none: 'Sin deudas. ¡Genial!', debts_first: 'Pagar primero', pay: 'Pago', pay_title: 'Pago de deuda', pay_pick: 'Qué deuda', balance: 'Saldo', rate_pa: '% anual', debt_title: 'Nueva deuda',
     invest_title: 'Inversiones', invest_soon: 'Pronto: precios de acciones y cripto, cartera por grupos y el gnomo inversor.', risk: 'No se garantizan beneficios. No es asesoramiento de inversión individual.',
