@@ -1,0 +1,264 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark light">
+<title>TGM — Privacy policy</title>
+<style>
+:root { --bg: #0e1a14; --fg: #e8efe6; --muted: #9db3a3; --line: #2a4132; --accent: #f2bd4b; }
+@media (prefers-color-scheme: light) { :root { --bg: #f6f3e8; --fg: #1d2b22; --muted: #52665a; --line: #cfd8c8; --accent: #8a5a00; } }
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--fg); font: 16px/1.6 system-ui, -apple-system, Segoe UI, Roboto, sans-serif; }
+main { max-width: 720px; margin: 0 auto; padding: 20px 16px 48px; }
+h1 { font-size: 26px; margin: 8px 0 4px; } h2 { font-size: 18px; margin: 26px 0 6px; color: var(--accent); }
+p, li { overflow-wrap: anywhere; } ul { padding-left: 22px; } a { color: var(--accent); }
+.muted { color: var(--muted); font-size: 14px; }
+nav.langs { display: flex; gap: 8px; flex-wrap: wrap; margin: 12px 0 8px; }
+nav.langs button { background: transparent; color: var(--fg); border: 1px solid var(--line); border-radius: 10px; padding: 8px 14px; font: inherit; cursor: pointer; min-height: 44px; }
+nav.langs button[aria-pressed="true"] { border-color: var(--accent); color: var(--accent); font-weight: 700; }
+section[hidden] { display: none; }
+.note { border: 1px solid var(--line); border-radius: 12px; padding: 10px 14px; margin: 16px 0; }
+</style>
+</head>
+<body>
+<main>
+<nav class="langs" aria-label="Language">
+  <button data-l="ru">Русский</button><button data-l="en">English</button><button data-l="pl">Polski</button><button data-l="es">Español</button>
+</nav>
+
+<!-- ============ RU ============ -->
+<section data-lang="ru" lang="ru">
+<h1>Политика конфиденциальности TGM</h1>
+<p class="muted">Приложение TGM — To Grow Money. Действует с 2026-11-15.</p>
+
+<h2>1. Кто обрабатывает данные</h2>
+<p>Администратор данных: Mikita Vasileuski (частный проект, Польша). Связь по вопросам данных: <a href="mailto:n75502839@gmail.com">n75502839@gmail.com</a>.</p>
+
+<h2>2. Какие данные мы обрабатываем</h2>
+<ul>
+<li><b>Аккаунт:</b> логин или адрес почты. Пароль хранится у провайдера входа только в виде необратимого хеша, мы его не видим. Если входишь через Google, мы получаем идентификатор и адрес почты аккаунта Google.</li>
+<li><b>Данные, которые ты вносишь:</b> доходы, траты, долги, цели, напоминания, вложения, займы другим людям, настройки, язык и валюта. Они хранятся в облаке одной записью, привязанной к твоему аккаунту.</li>
+<li><b>Данные восстановления:</b> хеш кода восстановления, текст секретного вопроса (если задан) и хеш ответа. Сам код и ответ мы не храним.</li>
+<li><b>Технические данные:</b> IP-адрес в журналах сервера. Для защиты от перебора паролей мы сохраняем счётчик попыток по хешу IP не дольше часа.</li>
+</ul>
+<p>У нас нет рекламы, аналитики и отслеживающих файлов cookie. Приложение не подключается к твоим банкам и не имеет доступа к счетам.</p>
+
+<h2>2а. Чужие данные в твоих записях</h2>
+<p>Если ты вносишь данные других людей (например, должников), записывай только то, что нужно тебе, лучше имена или инициалы без адресов и документов. Ответственность за такие записи лежит на тебе.</p>
+
+<h2>3. Зачем и на каком основании</h2>
+<ul>
+<li>Работа аккаунта и облачное сохранение прогресса: исполнение договора об оказании услуги (ст. 6(1)(b) RODO/GDPR).</li>
+<li>Безопасность и защита от злоупотреблений: законный интерес (ст. 6(1)(f)).</li>
+</ul>
+
+<h2>4. Кому передаются данные</h2>
+<ul>
+<li><b>Supabase</b>: база данных, вход и серверные функции. Регион хранения: ЕС (Франкфурт).</li>
+<li><b>Cloudflare</b>: размещение сайта и доставка страниц.</li>
+<li><b>Google</b>: только если ты выбираешь «Войти через Google».</li>
+<li><b>Сервисы цен</b> (CoinGecko, gold-api.com, Frankfurter/ЕЦБ, а также Twelve Data, если ты сам добавил свой ключ): получают только запрос цен и твой IP-адрес. Данные аккаунта им не передаются.</li>
+</ul>
+<p>Часть поставщиков может обрабатывать данные за пределами ЕЭЗ (например, в США). В таких случаях действуют стандартные договорные положения или иные механизмы защиты, предусмотренные RODO.</p>
+
+<h2>5. Сколько хранятся данные</h2>
+<p>Пока существует твой аккаунт. Кнопка «Удалить все мои данные» в разделе «Ещё» удаляет облачные данные и сам аккаунт. Журналы серверов хранятся у провайдеров в течение их стандартных сроков.</p>
+
+<h2>6. Твои права</h2>
+<p>Доступ к данным, исправление, удаление, ограничение обработки, перенос (выгрузка CSV в «Ещё»), возражение. Напиши на <a href="mailto:n75502839@gmail.com">n75502839@gmail.com</a>. Ты вправе пожаловаться в надзорный орган: Prezes Urzędu Ochrony Danych Osobowych (UODO), <a href="https://uodo.gov.pl">uodo.gov.pl</a>.</p>
+
+<h2>7. Данные на твоём устройстве</h2>
+<p>Приложение использует память браузера (localStorage), чтобы работать: хранит твои записи, настройки и сессию входа. Это необходимо для работы, отслеживания нет.</p>
+
+<h2>8. Это не финансовая консультация</h2>
+<p>TGM — учебный и учётный инструмент. Тексты и цены в приложении не являются инвестиционной рекомендацией, цены берутся у сторонних сервисов и могут отставать. Прибыль не гарантирована, можно потерять деньги.</p>
+
+<h2>9. Возраст и безопасность</h2>
+<p>Приложение не предназначено для детей младше 16 лет. Мы используем шифрованное соединение, правила доступа на уровне строк базы и хеширование секретов, но абсолютной защиты не бывает. При нарушении, затрагивающем твои права, мы сообщим об этом по закону.</p>
+
+<h2>10. Изменения</h2>
+<p>При существенных изменениях мы обновим эту страницу и дату вверху.</p>
+</section>
+
+<!-- ============ EN ============ -->
+<section data-lang="en" lang="en">
+<h1>TGM Privacy policy</h1>
+<p class="muted">The TGM — To Grow Money app. Effective 2026-11-15.</p>
+
+<h2>1. Who processes your data</h2>
+<p>Data controller: Mikita Vasileuski (private project, Poland). Contact for data matters: <a href="mailto:n75502839@gmail.com">n75502839@gmail.com</a>.</p>
+
+<h2>2. What data we process</h2>
+<ul>
+<li><b>Account:</b> a username or email address. Your password is kept by the sign-in provider only as an irreversible hash; we cannot see it. If you sign in with Google, we receive the ID and email address of your Google account.</li>
+<li><b>Data you enter:</b> income, expenses, debts, goals, reminders, investments, loans you gave to others, settings, language and currency. It is stored in the cloud as a single record linked to your account.</li>
+<li><b>Recovery data:</b> a hash of the recovery code, the text of your secret question (if set) and a hash of the answer. We do not store the code or the answer themselves.</li>
+<li><b>Technical data:</b> IP address in server logs. To protect against password guessing we keep an attempt counter by hashed IP for no longer than an hour.</li>
+</ul>
+<p>We have no ads, no analytics and no tracking cookies. The app does not connect to your banks and has no access to your accounts.</p>
+
+<h2>2a. Other people's data in your entries</h2>
+<p>If you enter data about other people (for example, people who owe you money), record only what you need, preferably names or initials without addresses or documents. You are responsible for such entries.</p>
+
+<h2>3. Why and on what basis</h2>
+<ul>
+<li>Running your account and saving progress in the cloud: performance of a contract for the service (Art. 6(1)(b) GDPR).</li>
+<li>Security and abuse prevention: legitimate interest (Art. 6(1)(f)).</li>
+</ul>
+
+<h2>4. Who receives data</h2>
+<ul>
+<li><b>Supabase</b>: database, sign-in and server functions. Storage region: EU (Frankfurt).</li>
+<li><b>Cloudflare</b>: hosting the website and delivering pages.</li>
+<li><b>Google</b>: only if you choose "Sign in with Google".</li>
+<li><b>Price services</b> (CoinGecko, gold-api.com, Frankfurter/ECB, and Twelve Data if you add your own key): receive only the price request and your IP address. No account data is sent to them.</li>
+</ul>
+<p>Some providers may process data outside the EEA (for example in the USA). In such cases standard contractual clauses or other safeguards under the GDPR apply.</p>
+
+<h2>5. How long we keep data</h2>
+<p>As long as your account exists. The "Delete all my data" button in "More" deletes cloud data and the account itself. Server logs are kept by providers for their standard periods.</p>
+
+<h2>6. Your rights</h2>
+<p>Access, rectification, erasure, restriction, portability (CSV export in "More"), objection. Write to <a href="mailto:n75502839@gmail.com">n75502839@gmail.com</a>. You may complain to the supervisory authority: the President of the Personal Data Protection Office (UODO), <a href="https://uodo.gov.pl">uodo.gov.pl</a>.</p>
+
+<h2>7. Data on your device</h2>
+<p>The app uses browser storage (localStorage) to work: it keeps your entries, settings and sign-in session. This is necessary for the app to function; there is no tracking.</p>
+
+<h2>8. This is not financial advice</h2>
+<p>TGM is an educational and bookkeeping tool. Texts and prices in the app are not investment advice; prices come from third-party services and may be delayed. Profit is not guaranteed and you can lose money.</p>
+
+<h2>9. Age and security</h2>
+<p>The app is not intended for children under 16. We use encrypted connections, row-level access rules in the database and hashing of secrets, but no protection is absolute. If a breach affects your rights, we will notify you as the law requires.</p>
+
+<h2>10. Changes</h2>
+<p>If something significant changes, we will update this page and the date above.</p>
+</section>
+
+<!-- ============ PL ============ -->
+<section data-lang="pl" lang="pl">
+<h1>Polityka prywatności TGM</h1>
+<p class="muted">Aplikacja TGM — To Grow Money. Obowiązuje od 2026-11-15.</p>
+
+<h2>1. Kto przetwarza dane</h2>
+<p>Administrator danych: Mikita Vasileuski (projekt prywatny, Polska). Kontakt w sprawach danych: <a href="mailto:n75502839@gmail.com">n75502839@gmail.com</a>.</p>
+
+<h2>2. Jakie dane przetwarzamy</h2>
+<ul>
+<li><b>Konto:</b> login lub adres e-mail. Hasło jest przechowywane przez dostawcę logowania wyłącznie jako nieodwracalny skrót, nie możemy go zobaczyć. Jeśli logujesz się przez Google, otrzymujemy identyfikator i adres e-mail konta Google.</li>
+<li><b>Dane, które wpisujesz:</b> dochody, wydatki, długi, cele, przypomnienia, inwestycje, pożyczki udzielone innym osobom, ustawienia, język i waluta. Są zapisane w chmurze jako jeden rekord powiązany z twoim kontem.</li>
+<li><b>Dane do odzyskiwania konta:</b> skrót kodu odzyskiwania, treść pytania pomocniczego (jeśli ustawione) i skrót odpowiedzi. Samego kodu ani odpowiedzi nie przechowujemy.</li>
+<li><b>Dane techniczne:</b> adres IP w logach serwera. Aby chronić przed zgadywaniem haseł, przechowujemy licznik prób według skrótu IP nie dłużej niż godzinę.</li>
+</ul>
+<p>Nie mamy reklam, analityki ani śledzących plików cookie. Aplikacja nie łączy się z twoimi bankami i nie ma dostępu do rachunków.</p>
+
+<h2>2a. Dane innych osób w twoich wpisach</h2>
+<p>Jeśli wpisujesz dane innych osób (na przykład dłużników), zapisuj tylko to, co potrzebne, najlepiej imiona lub inicjały bez adresów i dokumentów. Za takie wpisy odpowiadasz ty.</p>
+
+<h2>3. Po co i na jakiej podstawie</h2>
+<ul>
+<li>Prowadzenie konta i zapis postępów w chmurze: wykonanie umowy o świadczenie usługi (art. 6 ust. 1 lit. b RODO).</li>
+<li>Bezpieczeństwo i zapobieganie nadużyciom: prawnie uzasadniony interes (art. 6 ust. 1 lit. f).</li>
+</ul>
+
+<h2>4. Kto otrzymuje dane</h2>
+<ul>
+<li><b>Supabase</b>: baza danych, logowanie i funkcje serwerowe. Region przechowywania: UE (Frankfurt).</li>
+<li><b>Cloudflare</b>: hosting strony i dostarczanie stron.</li>
+<li><b>Google</b>: tylko jeśli wybierzesz „Zaloguj przez Google”.</li>
+<li><b>Serwisy z cenami</b> (CoinGecko, gold-api.com, Frankfurter/EBC oraz Twelve Data, jeśli sam dodasz swój klucz): otrzymują tylko zapytanie o ceny i twój adres IP. Dane konta do nich nie trafiają.</li>
+</ul>
+<p>Niektórzy dostawcy mogą przetwarzać dane poza EOG (na przykład w USA). W takich przypadkach obowiązują standardowe klauzule umowne lub inne zabezpieczenia przewidziane w RODO.</p>
+
+<h2>5. Jak długo przechowujemy dane</h2>
+<p>Dopóki istnieje twoje konto. Przycisk „Usuń wszystkie moje dane” w zakładce „Więcej” usuwa dane z chmury i samo konto. Logi serwerów są przechowywane przez dostawców w standardowych okresach.</p>
+
+<h2>6. Twoje prawa</h2>
+<p>Dostęp, sprostowanie, usunięcie, ograniczenie przetwarzania, przenoszenie (eksport CSV w „Więcej”), sprzeciw. Napisz na <a href="mailto:n75502839@gmail.com">n75502839@gmail.com</a>. Możesz złożyć skargę do organu nadzorczego: Prezes Urzędu Ochrony Danych Osobowych (UODO), <a href="https://uodo.gov.pl">uodo.gov.pl</a>.</p>
+
+<h2>7. Dane na twoim urządzeniu</h2>
+<p>Aplikacja używa pamięci przeglądarki (localStorage), aby działać: przechowuje twoje wpisy, ustawienia i sesję logowania. Jest to niezbędne do działania, nie ma śledzenia.</p>
+
+<h2>8. To nie jest porada finansowa</h2>
+<p>TGM to narzędzie edukacyjne i do prowadzenia budżetu. Teksty i ceny w aplikacji nie są rekomendacją inwestycyjną, ceny pochodzą z zewnętrznych serwisów i mogą być opóźnione. Zysk nie jest gwarantowany, można stracić pieniądze.</p>
+
+<h2>9. Wiek i bezpieczeństwo</h2>
+<p>Aplikacja nie jest przeznaczona dla dzieci poniżej 16 lat. Stosujemy szyfrowane połączenie, reguły dostępu na poziomie wierszy bazy i hashowanie sekretów, ale absolutna ochrona nie istnieje. Jeśli naruszenie dotknie twoich praw, powiadomimy cię zgodnie z prawem.</p>
+
+<h2>10. Zmiany</h2>
+<p>Przy istotnych zmianach zaktualizujemy tę stronę i datę powyżej.</p>
+</section>
+
+<!-- ============ ES ============ -->
+<section data-lang="es" lang="es">
+<h1>Política de privacidad de TGM</h1>
+<p class="muted">La aplicación TGM — To Grow Money. En vigor desde 2026-11-15.</p>
+
+<h2>1. Quién trata tus datos</h2>
+<p>Responsable del tratamiento: Mikita Vasileuski (proyecto privado, Polonia). Contacto para asuntos de datos: <a href="mailto:n75502839@gmail.com">n75502839@gmail.com</a>.</p>
+
+<h2>2. Qué datos tratamos</h2>
+<ul>
+<li><b>Cuenta:</b> un usuario o una dirección de correo. La contraseña la guarda el proveedor de acceso solo como un hash irreversible; nosotros no podemos verla. Si entras con Google, recibimos el identificador y el correo de tu cuenta de Google.</li>
+<li><b>Datos que introduces:</b> ingresos, gastos, deudas, metas, recordatorios, inversiones, préstamos que hiciste a otras personas, ajustes, idioma y moneda. Se guardan en la nube como un único registro vinculado a tu cuenta.</li>
+<li><b>Datos de recuperación:</b> un hash del código de recuperación, el texto de tu pregunta secreta (si la fijas) y un hash de la respuesta. No guardamos el código ni la respuesta en sí.</li>
+<li><b>Datos técnicos:</b> dirección IP en los registros del servidor. Para protegerte de intentos de adivinar contraseñas guardamos un contador de intentos por hash de IP durante no más de una hora.</li>
+</ul>
+<p>No tenemos publicidad, analítica ni cookies de seguimiento. La aplicación no se conecta a tus bancos ni tiene acceso a tus cuentas.</p>
+
+<h2>2a. Datos de otras personas en tus registros</h2>
+<p>Si introduces datos de otras personas (por ejemplo, quienes te deben dinero), anota solo lo necesario, mejor nombres o iniciales sin direcciones ni documentos. Eres responsable de esos registros.</p>
+
+<h2>3. Para qué y con qué base</h2>
+<ul>
+<li>Gestionar tu cuenta y guardar el progreso en la nube: ejecución de un contrato de servicio (art. 6.1.b RGPD).</li>
+<li>Seguridad y prevención de abusos: interés legítimo (art. 6.1.f).</li>
+</ul>
+
+<h2>4. Quién recibe los datos</h2>
+<ul>
+<li><b>Supabase</b>: base de datos, acceso y funciones de servidor. Región de almacenamiento: UE (Fráncfort).</li>
+<li><b>Cloudflare</b>: alojamiento del sitio y entrega de páginas.</li>
+<li><b>Google</b>: solo si eliges «Entrar con Google».</li>
+<li><b>Servicios de precios</b> (CoinGecko, gold-api.com, Frankfurter/BCE y Twelve Data si añades tu propia clave): reciben solo la consulta de precios y tu dirección IP. No se les envían datos de la cuenta.</li>
+</ul>
+<p>Algunos proveedores pueden tratar datos fuera del EEE (por ejemplo, en EE. UU.). En esos casos se aplican cláusulas contractuales tipo u otras garantías previstas en el RGPD.</p>
+
+<h2>5. Cuánto tiempo guardamos los datos</h2>
+<p>Mientras exista tu cuenta. El botón «Borrar todos mis datos» en «Más» elimina los datos de la nube y la propia cuenta. Los registros de servidor los conservan los proveedores durante sus plazos habituales.</p>
+
+<h2>6. Tus derechos</h2>
+<p>Acceso, rectificación, supresión, limitación, portabilidad (exportación CSV en «Más»), oposición. Escribe a <a href="mailto:n75502839@gmail.com">n75502839@gmail.com</a>. Puedes reclamar ante la autoridad de control: el Presidente de la Oficina de Protección de Datos Personales de Polonia (UODO), <a href="https://uodo.gov.pl">uodo.gov.pl</a>.</p>
+
+<h2>7. Datos en tu dispositivo</h2>
+<p>La aplicación usa el almacenamiento del navegador (localStorage) para funcionar: guarda tus registros, ajustes y la sesión. Es necesario para que funcione; no hay seguimiento.</p>
+
+<h2>8. No es asesoramiento financiero</h2>
+<p>TGM es una herramienta educativa y de control de presupuesto. Los textos y precios de la aplicación no son una recomendación de inversión; los precios vienen de servicios de terceros y pueden retrasarse. La ganancia no está garantizada y puedes perder dinero.</p>
+
+<h2>9. Edad y seguridad</h2>
+<p>La aplicación no está dirigida a menores de 16 años. Usamos conexión cifrada, reglas de acceso por filas en la base de datos y hash de secretos, pero ninguna protección es absoluta. Si una brecha afecta a tus derechos, te lo notificaremos como exige la ley.</p>
+
+<h2>10. Cambios</h2>
+<p>Si cambia algo importante, actualizaremos esta página y la fecha de arriba.</p>
+</section>
+
+<p class="note muted">TGM · <a href="./">App</a> · <span id="contact">Mikita Vasileuski, <a href="mailto:n75502839@gmail.com">n75502839@gmail.com</a></span></p>
+</main>
+<script>
+(function () {
+  var L = ['ru', 'en', 'pl', 'es'];
+  var q = new URLSearchParams(location.search).get('lang');
+  var nav = (navigator.language || 'en').slice(0, 2);
+  var cur = L.indexOf(q) >= 0 ? q : (L.indexOf(nav) >= 0 ? nav : 'en');
+  function show(l) {
+    cur = l; document.documentElement.lang = l;
+    document.querySelectorAll('section[data-lang]').forEach(function (s) { s.hidden = s.getAttribute('data-lang') !== l; });
+    document.querySelectorAll('nav.langs button').forEach(function (b) { b.setAttribute('aria-pressed', b.getAttribute('data-l') === l ? 'true' : 'false'); });
+  }
+  document.querySelectorAll('nav.langs button').forEach(function (b) { b.addEventListener('click', function () { show(b.getAttribute('data-l')); }); });
+  show(cur);
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark light">
+<title>TGM — To Grow Money</title>
+<meta name="description" content="TGM — To Grow Money: a personal finance app where a tree grows as your money habits improve.">
+<style>
+:root { --bg: #0e1a14; --fg: #e8efe6; --muted: #9db3a3; --line: #2a4132; --accent: #f2bd4b; --btn: #f2bd4b; --btnfg: #1a1405; }
+@media (prefers-color-scheme: light) { :root { --bg: #f6f3e8; --fg: #1d2b22; --muted: #52665a; --line: #cfd8c8; --accent: #8a5a00; --btn: #2e6b3f; --btnfg: #ffffff; } }
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--fg); font: 16px/1.6 system-ui, -apple-system, Segoe UI, Roboto, sans-serif; }
+main { max-width: 640px; margin: 0 auto; padding: 28px 16px 48px; }
+h1 { font-size: 32px; margin: 12px 0 6px; } p { overflow-wrap: anywhere; } .muted { color: var(--muted); font-size: 14px; }
+a { color: var(--accent); }
+.btn { display: inline-block; background: var(--btn); color: var(--btnfg); text-decoration: none; font-weight: 700; padding: 14px 22px; border-radius: 12px; margin: 14px 0; min-height: 48px; }
+nav.langs { display: flex; gap: 8px; flex-wrap: wrap; margin: 8px 0 12px; }
+nav.langs button { background: transparent; color: var(--fg); border: 1px solid var(--line); border-radius: 10px; padding: 8px 14px; font: inherit; cursor: pointer; min-height: 44px; }
+nav.langs button[aria-pressed="true"] { border-color: var(--accent); color: var(--accent); font-weight: 700; }
+section[hidden] { display: none; } ul { padding-left: 22px; }
+footer { margin-top: 36px; border-top: 1px solid var(--line); padding-top: 14px; }
+</style>
+</head>
+<body>
+<main>
+<nav class="langs" aria-label="Language"><button data-l="ru">Русский</button><button data-l="en">English</button><button data-l="pl">Polski</button><button data-l="es">Español</button></nav>
+
+<section data-lang="ru" lang="ru">
+<h1>TGM — To Grow Money</h1>
+<p>Приложение для личных финансов: дерево растёт, когда ты ведёшь учёт, гасишь долги и копишь. Пять гномов-помощников, корзины для денег, цели, напоминания, цены крипты, золота и валют, и «Азбука инвестора» простыми словами.</p>
+<ul><li>Без доступа к твоим банкам: ты вносишь записи сам.</li><li>Прогресс сохраняется в облаке в твоём аккаунте.</li><li>Русский, English, Polski, Español.</li></ul>
+<a class="btn" href="./">Открыть приложение</a>
+<p class="muted">Это учебный инструмент, а не инвестиционная консультация. Прибыль не гарантирована.</p>
+</section>
+
+<section data-lang="en" lang="en">
+<h1>TGM — To Grow Money</h1>
+<p>A personal finance app where a tree grows as you track spending, pay off debts and save. Five gnome helpers, baskets for your money, goals, reminders, crypto, gold and currency prices, and an "Investor ABC" in plain words.</p>
+<ul><li>No access to your banks: you enter your own records.</li><li>Your progress is saved to the cloud in your account.</li><li>Русский, English, Polski, Español.</li></ul>
+<a class="btn" href="./">Open the app</a>
+<p class="muted">This is an educational tool, not investment advice. Profit is not guaranteed.</p>
+</section>
+
+<section data-lang="pl" lang="pl">
+<h1>TGM — To Grow Money</h1>
+<p>Aplikacja do finansów osobistych: drzewo rośnie, gdy prowadzisz budżet, spłacasz długi i oszczędzasz. Pięć gnomów-pomocników, koszyki na pieniądze, cele, przypomnienia, ceny krypto, złota i walut oraz „Abecadło inwestora” prostym językiem.</p>
+<ul><li>Bez dostępu do twoich banków: wpisy robisz sam.</li><li>Postęp zapisuje się w chmurze na twoim koncie.</li><li>Русский, English, Polski, Español.</li></ul>
+<a class="btn" href="./">Otwórz aplikację</a>
+<p class="muted">To narzędzie edukacyjne, a nie doradztwo inwestycyjne. Zysk nie jest gwarantowany.</p>
+</section>
+
+<section data-lang="es" lang="es">
+<h1>TGM — To Grow Money</h1>
+<p>Una app de finanzas personales: el árbol crece cuando llevas tus cuentas, pagas deudas y ahorras. Cinco gnomos ayudantes, cestas para tu dinero, metas, recordatorios, precios de cripto, oro y divisas, y un «ABC del inversor» con palabras sencillas.</p>
+<ul><li>Sin acceso a tus bancos: tú introduces tus registros.</li><li>Tu progreso se guarda en la nube, en tu cuenta.</li><li>Русский, English, Polski, Español.</li></ul>
+<a class="btn" href="./">Abrir la app</a>
+<p class="muted">Es una herramienta educativa, no asesoramiento de inversión. La ganancia no está garantizada.</p>
+</section>
+
+<footer class="muted"><a id="pl" href="privacy.html">Privacy policy</a> · Mikita Vasileuski · <a href="mailto:n75502839@gmail.com">n75502839@gmail.com</a></footer>
+</main>
+<script>
+(function () {
+  var L = ['ru', 'en', 'pl', 'es'];
+  var q = new URLSearchParams(location.search).get('lang'); var nav = (navigator.language || 'en').slice(0, 2);
+  var T = { ru: 'Политика конфиденциальности', en: 'Privacy policy', pl: 'Polityka prywatności', es: 'Política de privacidad' };
+  function show(l) {
+    document.documentElement.lang = l;
+    document.querySelectorAll('section[data-lang]').forEach(function (s) { s.hidden = s.getAttribute('data-lang') !== l; });
+    document.querySelectorAll('nav.langs button').forEach(function (b) { b.setAttribute('aria-pressed', b.getAttribute('data-l') === l ? 'true' : 'false'); });
+    var p = document.getElementById('pl'); p.textContent = T[l]; p.href = 'privacy.html?lang=' + l;
+  }
+  document.querySelectorAll('nav.langs button').forEach(function (b) { b.addEventListener('click', function () { show(b.getAttribute('data-l')); }); });
+  show(L.indexOf(q) >= 0 ? q : (L.indexOf(nav) >= 0 ? nav : 'en'));
+})();
+</script>
+</body>
+</html>
