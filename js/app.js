@@ -1,14 +1,14 @@
 // TGM — To Grow Money. Экраны и действия.
-import { t, setLang, getLang, LANGS, LANG_NAMES } from './i18n.js?v=0.9.1';
-import { store } from './store.js?v=0.9.1';
-import * as C from './calc.js?v=0.9.1';
-import { snd } from './sound.js?v=0.9.1';
-import * as P from './prices.js?v=0.9.1';
-import { LIBRARY } from './library.js?v=0.9.1';
-import { LEARN } from './learn.js?v=0.9.1';
-import * as A from './auth.js?v=0.9.1';
-import { REQUIRE_ACCOUNT, AUTH_DOMAIN, SITE_URL } from '../config.js?v=0.9.1';
-import { TOUR_STEPS, tipPosition } from './tour.js?v=0.9.1';
+import { t, setLang, getLang, LANGS, LANG_NAMES } from './i18n.js?v=0.9.2';
+import { store } from './store.js?v=0.9.2';
+import * as C from './calc.js?v=0.9.2';
+import { snd } from './sound.js?v=0.9.2';
+import * as P from './prices.js?v=0.9.2';
+import { LIBRARY } from './library.js?v=0.9.2';
+import { LEARN } from './learn.js?v=0.9.2';
+import * as A from './auth.js?v=0.9.2';
+import { REQUIRE_ACCOUNT, AUTH_DOMAIN, SITE_URL } from '../config.js?v=0.9.2';
+import { TOUR_STEPS, tipPosition } from './tour.js?v=0.9.2';
 
 const CURRENCIES = ['USD', 'BYN', 'RUB', 'PLN', 'UAH', 'EUR'];
 const LOCALE = { ru: 'ru-RU', en: 'en-US', pl: 'pl-PL', es: 'es-ES' };
@@ -16,7 +16,7 @@ const CATS = ['food', 'home', 'utilities', 'transport', 'comm', 'health', 'fun',
 const NEED_CATS = new Set(['food', 'home', 'utilities', 'transport', 'comm', 'health']);
 const STEPS = ['lang', 'cur', 'auth', 'income', 'debts', 'cushion', 'needs', 'food', 'fun', 'waste', 'mode', 'plan'];
 const OB = 'tgm_ob';
-const APP_VERSION = '0.9.1 (этап 3, аккаунты и подсказки про доход)';
+const APP_VERSION = '0.9.2 (этап 3, часы по дням и заработок по месяцам)';
 const ui = { screen: 'today', modal: null, step: 0, draft: null, cal: { month: null, sel: null }, acc: { tab: 'signup' }, fg: {}, rc: {}, busy: false, afterAuth: false };
 const $app = document.getElementById('app');
 const S = () => store.state;
@@ -683,7 +683,8 @@ function allEntries() {
 }
 function rowHtml(e) {
   const a = e.amount === null ? '✓' : (e.amount > 0 ? '+' : '−') + money(Math.abs(e.amount));
-  return `<div class="row"><div${e.k === 'expense' || e.k === 'income' ? ` class="editable" role="button" tabindex="0" data-act="editEntry" data-k="${e.k}" data-id="${esc(e.id)}"` : ''}><b>${esc(e.title)}${e.k === 'expense' || e.k === 'income' ? ' <span class="muted">✎</span>' : ''}</b><div class="muted small">${shortDate(e.date)}${e.sub ? ' · ' + esc(e.sub) : ''}</div></div><div class="amt ${e.amount > 0 ? (e.pending ? 'pend' : 'good') : ''}">${a}</div><button class="x" data-act="delEntry" data-k="${e.k}" data-id="${esc(e.id)}" aria-label="${t('remove')}">✕</button></div>`;
+  const canEdit = e.k === 'expense' || e.k === 'income' || e.k === 'shift';
+  return `<div class="row"><div${canEdit ? ` class="editable" role="button" tabindex="0" data-act="editEntry" data-k="${e.k}" data-id="${esc(e.id)}"` : ''}><b>${esc(e.title)}${canEdit ? ' <span class="muted">✎</span>' : ''}</b><div class="muted small">${shortDate(e.date)}${e.sub ? ' · ' + esc(e.sub) : ''}</div></div><div class="amt ${e.amount > 0 ? (e.pending ? 'pend' : 'good') : ''}">${a}</div><button class="x" data-act="delEntry" data-k="${e.k}" data-id="${esc(e.id)}" aria-label="${t('remove')}">✕</button></div>`;
 }
 
 // ---------- аккаунт: вход, регистрация, восстановление ----------
@@ -779,8 +780,9 @@ function workCard() {
   const p = S().profile;
   if (p.incomeType !== 'hour') return '';
   const active = S().shifts.find((x) => !x.end);
-  const unpaid = C.unpaidEarned(S());
-  return `<section class="card work"><div class="between"><span>${t('earned_wait')}</span><b>${money(unpaid)}</b></div><div class="muted small">${t('rate_h', { r: money(p.hourlyRate) })}</div>
+  const sp = C.earnedSplit(S(), C.ymd());
+  const prevTag = sp.prevWaiting > 0 ? t('earned_prev_wait') : (sp.prevMonth > 0 ? t('earned_prev_paid') : '');
+  return `<section class="card work"><div class="between"><span>${t('earned_prev')}</span><b>${money(sp.prevMonth)}</b></div>${prevTag ? `<div class="muted small">${prevTag}</div>` : ''}<div class="between"><span>${t('earned_this')}</span><b>${money(sp.thisMonth)}</b></div>${sp.olderWaiting > 0 ? `<div class="between"><span>${t('earned_older')}</span><b>${money(sp.olderWaiting)}</b></div>` : ''}<div class="muted small">${t('rate_h', { r: money(p.hourlyRate) })}</div>
 ${active ? `<div class="timer" id="shiftTimer" data-start="${active.start}">00:00:00</div><button class="btn primary" data-act="endWork">${t('work_end')}</button>` : `<button class="btn primary" data-act="startWork">${t('work_start')}</button>`}
 <button class="btn ghost" data-act="openWork">${t('work_add')}</button></section>`;
 }
@@ -1237,8 +1239,15 @@ ${field(t('note'), `<input id="m_note" maxlength="120" autocomplete="off" value=
   } else if (m.type === 'income') {
     const edi = m.edit ? S().incomes.find((x) => x.id === m.edit) : null;
     const unpaid = edi ? 0 : C.unpaidEarned(S());
+    const unpaidPrev = edi ? 0 : C.unpaidBefore(S(), C.monthOf(m.date || today));
+    const twoScopes = unpaidPrev > 0 && unpaidPrev < unpaid;
+    const scopeHtml = unpaid > 0
+      ? (twoScopes
+        ? field(t('pay_scope_label'), `<select id="m_scope"><option value="prev" data-amt="${unpaidPrev}" selected>${esc(t('pay_scope_prev', { a: money(unpaidPrev) }))}</option><option value="all" data-amt="${unpaid}">${esc(t('pay_scope_all', { a: money(unpaid) }))}</option></select>`)
+        : `<input type="hidden" id="m_scope" value="all">`)
+      : '';
     inner = `<h3>${t(edi ? 'edit_entry' : 'inc_title')}</h3><form data-submit="saveIncome"><input type="hidden" id="m_edit" value="${esc(edi ? edi.id : '')}">${dateField(edi ? edi.date : (m.date || today))}<p class="muted small">${t('inc_date_hint')}</p>${field(t('amount'), `<input id="m_amount" inputmode="decimal" data-af autocomplete="off" value="${esc(edi ? String(edi.amount).replace('.', ',') : '')}">`)}${field(t('source'), `<input id="m_source" maxlength="60" placeholder="${esc(t('salary'))}" autocomplete="off" value="${esc(edi ? edi.source : '')}">`)}
-${unpaid > 0 ? `<label class="check2"><input type="checkbox" id="m_paid" checked><span>${t('shift_paid')} (${money(unpaid)})</span></label><button type="button" class="btn ghost" data-act="fillEarned" data-v="${unpaid}">${t('fill_earned')}</button>` : ''}${footBtns()}</form>`;
+${unpaid > 0 ? `<label class="check2"><input type="checkbox" id="m_paid" checked><span>${t('shift_paid')}</span></label>${scopeHtml}<button type="button" class="btn ghost" data-act="fillEarned" data-v="${twoScopes ? unpaidPrev : unpaid}">${t('fill_earned')}</button>` : ''}${footBtns()}</form>`;
   } else if (m.type === 'loan') {
     const l = m.id ? S().loans.find((x) => x.id === m.id) : null;
     const src = l ? '' : field(t('loan_src'), `<select id="m_src"><option value="own">${esc(t('loan_src_own'))}</option><option value="cushion">${esc(BNAME('cushion'))} · ${esc(money(C.purchaseAvailable(S(), 'cushion')))}</option><option value="invest">${esc(BNAME('invest'))} · ${esc(money(C.purchaseAvailable(S(), 'invest')))}</option></select>`);
@@ -1307,7 +1316,8 @@ ${C.fixedNeeds(S(), today) > 0 && !inc.alloc.needs ? `<p class="muted small">${t
     const open = S().debts.filter((d) => d.balance > 0).sort((a, b) => b.rate - a.rate);
     inner = `<h3>${t('pay_title')}</h3><form data-submit="savePay">${field(t('pay_pick'), `<select id="m_debt">${open.map((d) => `<option value="${esc(d.id)}">${esc(d.name)} · ${esc(money(d.balance))}</option>`).join('')}</select>`)}${dateField(today)}${field(t('amount'), '<input id="m_amount" inputmode="decimal" data-af autocomplete="off">')}${footBtns()}</form>`;
   } else if (m.type === 'work') {
-    inner = `<h3>${t('work_title')}</h3><form data-submit="saveWork">${dateField(m.date || today)}${field(t('hours'), `<input id="m_hours" inputmode="decimal" data-af placeholder="${esc(t('hours_ph'))}" autocomplete="off">`)}${footBtns()}</form>`;
+    const ws = m.edit ? S().shifts.find((x) => x.id === m.edit && x.end) : null;
+    inner = `<h3>${t(ws ? 'work_edit_title' : 'work_day_title')}</h3><form data-submit="saveWork"><input type="hidden" id="m_edit" value="${esc(ws ? ws.id : '')}">${dateField(ws ? ws.date : (m.date || today))}<p class="muted small">${t('work_day_hint')}</p>${field(t('hours'), `<input id="m_hours" inputmode="decimal" data-af placeholder="${esc(t('hours_ph'))}" autocomplete="off" value="${esc(ws ? String(ws.hours).replace('.', ',') : '')}">`)}${footBtns()}</form>`;
   } else if (m.type === 'pilot') {
     inner = vPilotBody();
   } else if (m.type === 'holding') {
@@ -1790,7 +1800,13 @@ const actions = {
       if (isWaste(category, note)) gnomeSay([{ type: 'gardener', text: t('gn_waste'), ms: 7500 }]);
     }
   },
-  fillEarned(el) { const a = document.getElementById('m_amount'); if (a) a.value = String(el.dataset.v).replace('.', ','); },
+  fillEarned(el) {
+    const a = document.getElementById('m_amount');
+    const sel = document.getElementById('m_scope');
+    const opt = sel && sel.selectedOptions && sel.selectedOptions[0];
+    const amt = opt && opt.dataset.amt ? opt.dataset.amt : el.dataset.v;
+    if (a && amt) a.value = String(amt).replace('.', ',');
+  },
   saveIncome() {
     const amount = C.parseMoney(val('m_amount'));
     if (!amount) return toast(t('err_amount'), true);
@@ -1811,13 +1827,17 @@ const actions = {
       return;
     }
     const paidBox = document.getElementById('m_paid');
-    const unpaid = C.unpaidEarned(S());
+    const scopeEl = document.getElementById('m_scope');
+    const scope = scopeEl && scopeEl.value === 'prev' ? 'prev' : 'all';
+    // «за прошлые месяцы» = смены до месяца, в котором стоит дата дохода; смены этого месяца остаются ждать своей выплаты
+    const inScope = (x) => x.end && !x.paidBy && (scope === 'all' || C.monthOf(x.date) < C.monthOf(date));
+    const unpaid = C.round2(S().shifts.filter(inScope).reduce((a, x) => a + (Number(x.amount) || 0), 0));
     const markPaid = Boolean(paidBox && paidBox.checked && unpaid > 0);
     const alloc = C.allocateIncome(S(), amount, date, C.ymd());
     const id = uid();
     store.update((s) => {
       s.incomes.push({ id, ts: Date.now(), date, amount, source, alloc, done: {} });
-      if (markPaid) s.shifts.forEach((x) => { if (x.end && !x.paidBy) x.paidBy = id; });
+      if (markPaid) s.shifts.forEach((x) => { if (inScope(x)) x.paidBy = id; });
     });
     snd.play('whoosh');
     openModal('incomeDone', { id, note: markPaid ? t('expected_vs', { a: money(unpaid), b: money(amount) }) : '' });
@@ -1900,13 +1920,20 @@ const actions = {
     if (!hours) return toast(t('err_hours2'), true);
     const date = readDate('m_date');
     const rate = Number(S().profile.hourlyRate) || 0;
-    store.update((s) => { s.shifts.push({ id: uid(), start: null, end: Date.now(), date, hours, rate, amount: C.round2(hours * rate), manual: true }); });
+    const editId = val('m_edit');
+    if (editId) {
+      // правка: меняем день и часы, сумма считается по той ставке, что была у смены
+      store.update((s) => { const x = s.shifts.find((y) => y.id === editId); if (x) { x.date = date; x.hours = hours; x.amount = C.round2(hours * (Number(x.rate) || rate)); } });
+    } else {
+      store.update((s) => { s.shifts.push({ id: uid(), start: null, end: Date.now(), date, hours, rate, amount: C.round2(hours * rate), manual: true }); });
+    }
     ui.modal = null; render(); toast(t('toast_saved'));
   },
   editEntry(el) {
     const { k, id } = el.dataset;
     if (k === 'expense') openModal('expense', { edit: id });
     else if (k === 'income') openModal('income', { edit: id });
+    else if (k === 'shift') openModal('work', { edit: id });
   },
   // «Мне должны»: займы другим людям
   setDebtTab(el) { ui.debtTab = el.dataset.v === 'owed' ? 'owed' : 'mine'; render(); window.scrollTo(0, 0); },

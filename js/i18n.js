@@ -1,6 +1,6 @@
 // Все тексты интерфейса в одном месте: русский, английский, польский, испанский.
 // Тексты входа и аккаунта лежат в js/authtext.js и добавляются к словарю ниже.
-import { AUTH_T } from './authtext.js?v=0.9.1';
+import { AUTH_T } from './authtext.js?v=0.9.2';
 export const LANGS = ['ru', 'en', 'pl', 'es'];
 export const LANG_NAMES = { ru: 'Русский', en: 'English', pl: 'Polski', es: 'Español' };
 
@@ -143,6 +143,9 @@ const D = {
     cal_title: 'Календарь', day_empty: 'В этот день записей нет', add_for_day: 'Добавить на этот день', date: 'Дата', set_tz: 'Часовой пояс', set_start: 'Дата старта', nav_calendar: 'Календарь',
     work_start: 'Начать рабочий день', work_end: 'Закончить рабочий день', work_add: 'Добавить часы вручную', work_title: 'Отработанные часы', hours: 'Часы', hours_ph: 'например 7,5 или 7:30',
     shift: 'Смена', earned_wait: 'Заработано, ждёт выплаты', shift_paid: 'Это выплата за отработанные смены', shift_paid_tag: 'выплачено', fill_earned: 'Подставить заработанное',
+    earned_prev: 'Заработано за прошлый месяц', earned_this: 'Заработано в этом месяце', earned_older: 'Ещё ждёт выплаты (раньше)', earned_prev_wait: 'ждёт выплаты', earned_prev_paid: 'выплачено',
+    work_day_title: 'Часы за день', work_edit_title: 'Изменить часы', work_day_hint: 'Выбери день, за который добавляешь часы. Они попадут в заработок того месяца, где стоит дата.',
+    pay_scope_label: 'Какие часы оплачены', pay_scope_prev: 'За прошлые месяцы · {a}', pay_scope_all: 'Все, включая этот месяц · {a}',
     expected_vs: 'По часам ждали {a}, пришло {b}', h_short: 'ч', m_short: 'мин', rate_h: 'Ставка: {r} в час', err_hours2: 'Введи часы больше нуля, но не больше 24', err_rate: 'Укажи ставку больше нуля',
     lab_in: 'Пришло в корзину', lab_left: 'Осталось', lab_plan: 'План на месяц', lab_month_saved: 'Отложено за месяц', lab_total: 'Всего',
     cat_utilities: 'Коммуналка', cat_health: 'Здоровье', cat_shopping: 'Покупки', long_shift_warn: 'Смена длиннее 16 часов. Проверь: возможно, забыл нажать «Закончить».',
@@ -310,6 +313,9 @@ const D = {
     cal_title: 'Calendar', day_empty: 'No entries on this day', add_for_day: 'Add for this day', date: 'Date', set_tz: 'Time zone', set_start: 'Start date', nav_calendar: 'Calendar',
     work_start: 'Start work day', work_end: 'End work day', work_add: 'Add hours manually', work_title: 'Hours worked', hours: 'Hours', hours_ph: 'e.g. 7.5 or 7:30',
     shift: 'Shift', earned_wait: 'Earned, waiting for payment', shift_paid: 'This is payment for worked shifts', shift_paid_tag: 'paid', fill_earned: 'Fill in earned amount',
+    earned_prev: 'Earned last month', earned_this: 'Earned this month', earned_older: 'Still waiting for pay (earlier)', earned_prev_wait: 'waiting for pay', earned_prev_paid: 'paid',
+    work_day_title: 'Hours for a day', work_edit_title: 'Edit hours', work_day_hint: 'Pick the day you are adding hours for. They count toward the month that date falls in.',
+    pay_scope_label: 'Which hours were paid', pay_scope_prev: 'Previous months · {a}', pay_scope_all: 'All, including this month · {a}',
     expected_vs: 'By hours expected {a}, received {b}', h_short: 'h', m_short: 'min', rate_h: 'Rate: {r} per hour', err_hours2: 'Enter hours above zero, up to 24', err_rate: 'Enter a rate above zero',
     lab_in: 'Came into basket', lab_left: 'Left', lab_plan: 'Plan for the month', lab_month_saved: 'Set aside this month', lab_total: 'Total',
     cat_utilities: 'Utilities', cat_health: 'Health', cat_shopping: 'Shopping', long_shift_warn: 'The shift is longer than 16 hours. Check it: maybe you forgot to press End.',
@@ -477,6 +483,9 @@ const D = {
     cal_title: 'Kalendarz', day_empty: 'Tego dnia brak wpisów', add_for_day: 'Dodaj na ten dzień', date: 'Data', set_tz: 'Strefa czasowa', set_start: 'Data startu', nav_calendar: 'Kalendarz',
     work_start: 'Zacznij dzień pracy', work_end: 'Zakończ dzień pracy', work_add: 'Dodaj godziny ręcznie', work_title: 'Przepracowane godziny', hours: 'Godziny', hours_ph: 'np. 7,5 lub 7:30',
     shift: 'Zmiana', earned_wait: 'Zarobione, czeka na wypłatę', shift_paid: 'To wypłata za przepracowane zmiany', shift_paid_tag: 'wypłacone', fill_earned: 'Wstaw zarobioną kwotę',
+    earned_prev: 'Zarobione w zeszłym miesiącu', earned_this: 'Zarobione w tym miesiącu', earned_older: 'Nadal czeka na wypłatę (wcześniej)', earned_prev_wait: 'czeka na wypłatę', earned_prev_paid: 'wypłacone',
+    work_day_title: 'Godziny za dzień', work_edit_title: 'Zmień godziny', work_day_hint: 'Wybierz dzień, za który dodajesz godziny. Liczą się do miesiąca z tej daty.',
+    pay_scope_label: 'Które godziny zostały opłacone', pay_scope_prev: 'Za poprzednie miesiące · {a}', pay_scope_all: 'Wszystkie, razem z tym miesiącem · {a}',
     expected_vs: 'Według godzin oczekiwano {a}, przyszło {b}', h_short: 'godz.', m_short: 'min', rate_h: 'Stawka: {r} za godzinę', err_hours2: 'Wpisz godziny większe od zera, do 24', err_rate: 'Podaj stawkę większą od zera',
     lab_in: 'Wpłynęło do koszyka', lab_left: 'Zostało', lab_plan: 'Plan na miesiąc', lab_month_saved: 'Odłożono w tym miesiącu', lab_total: 'Razem',
     cat_utilities: 'Opłaty', cat_health: 'Zdrowie', cat_shopping: 'Zakupy', long_shift_warn: 'Zmiana trwa ponad 16 godzin. Sprawdź: może zapomniałeś kliknąć Zakończ.',
@@ -644,6 +653,9 @@ const D = {
     cal_title: 'Calendario', day_empty: 'Sin movimientos este día', add_for_day: 'Añadir a este día', date: 'Fecha', set_tz: 'Zona horaria', set_start: 'Fecha de inicio', nav_calendar: 'Calendario',
     work_start: 'Empezar jornada', work_end: 'Terminar jornada', work_add: 'Añadir horas a mano', work_title: 'Horas trabajadas', hours: 'Horas', hours_ph: 'p. ej. 7,5 o 7:30',
     shift: 'Turno', earned_wait: 'Ganado, pendiente de pago', shift_paid: 'Es el pago de los turnos trabajados', shift_paid_tag: 'pagado', fill_earned: 'Poner lo ganado',
+    earned_prev: 'Ganado el mes pasado', earned_this: 'Ganado este mes', earned_older: 'Aún pendiente de pago (antes)', earned_prev_wait: 'pendiente de pago', earned_prev_paid: 'pagado',
+    work_day_title: 'Horas de un día', work_edit_title: 'Cambiar horas', work_day_hint: 'Elige el día al que añades las horas. Cuentan para el mes de esa fecha.',
+    pay_scope_label: 'Qué horas se pagaron', pay_scope_prev: 'Meses anteriores · {a}', pay_scope_all: 'Todas, incluido este mes · {a}',
     expected_vs: 'Por horas se esperaba {a}, llegó {b}', h_short: 'h', m_short: 'min', rate_h: 'Tarifa: {r} por hora', err_hours2: 'Introduce horas mayores que cero, hasta 24', err_rate: 'Indica una tarifa mayor que cero',
     lab_in: 'Entró en la cesta', lab_left: 'Queda', lab_plan: 'Plan del mes', lab_month_saved: 'Apartado este mes', lab_total: 'Total',
     cat_utilities: 'Suministros', cat_health: 'Salud', cat_shopping: 'Compras', long_shift_warn: 'El turno dura más de 16 horas. Revísalo: quizá olvidaste pulsar Terminar.',

@@ -129,6 +129,27 @@ export function expectedMonthly(state, today = ymd()) {
   return span >= 7 ? proj : est || proj;
 }
 export const unpaidEarned = (state) => round2(sum((state.shifts || []).filter((s) => s.end && !s.paidBy), (s) => s.amount));
+// Предыдущий месяц в виде ГГГГ-ММ (для января это декабрь прошлого года)
+export function prevMonthKey(mk) {
+  const [y, m] = mk.split('-').map(Number);
+  return m === 1 ? `${y - 1}-12` : `${y}-${pad(m - 1)}`;
+}
+// Сколько ещё не выплачено за смены, отработанные ДО месяца mk (то есть за прошлые месяцы)
+export const unpaidBefore = (state, mk) => round2(sum((state.shifts || []).filter((s) => s.end && !s.paidBy && monthOf(s.date) < mk), (s) => s.amount));
+// Заработок по часам в разрезе месяцев: этот месяц, прошлый месяц, и что из более раннего ещё не выплачено.
+// Месяц определяется датой смены, а не днём, когда пришли деньги.
+export function earnedSplit(state, today = ymd()) {
+  const cur = monthOf(today);
+  const prev = prevMonthKey(cur);
+  const done = (state.shifts || []).filter((s) => s.end);
+  const by = (f) => round2(sum(done.filter(f), (s) => s.amount));
+  return {
+    thisMonth: by((s) => monthOf(s.date) === cur),
+    prevMonth: by((s) => monthOf(s.date) === prev),
+    prevWaiting: by((s) => monthOf(s.date) === prev && !s.paidBy),
+    olderWaiting: by((s) => monthOf(s.date) < prev && !s.paidBy),
+  };
+}
 
 export const hasDebts = (debts) => (debts || []).some((d) => d.balance > 0);
 
