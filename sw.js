@@ -1,9 +1,9 @@
-// Service worker: код и стили сначала из сети (всегда свежая версия), при отсутствии сети отдаёт сохранённое.
+﻿// Service worker: код и стили сначала из сети (всегда свежая версия), при отсутствии сети отдаёт сохранённое.
 // v0.5.8: в «каркас» кладём только лёгкое (код, стили, иконки). Картинки (WebP в assets/) идут из кэша, если уже есть,
 // и кладутся туда по мере показа, а не заранее: кэш не раздувается и телефон не качает их при каждом запуске.
 // Если заменить картинку под тем же именем, поднимите версию CACHE, иначе останется старая.
-const CACHE = 'tgm-v11';
-const SHELL = ['./', 'index.html', 'style.css', 'config.js', 'manifest.json', 'js/app.js', 'js/calc.js', 'js/store.js', 'js/i18n.js', 'js/sound.js', 'js/prices.js', 'js/library.js', 'js/learn.js', 'js/auth.js', 'js/merge.js', 'js/authtext.js', 'js/tour.js', 'icons/icon-192.png', 'icons/icon-512.png', 'icons/apple-touch-icon.png'];
+const CACHE = 'tgm-v9';
+const SHELL = ['./', 'index.html', 'style.css', 'config.js', 'manifest.json', 'js/app.js', 'js/calc.js', 'js/store.js', 'js/i18n.js', 'js/sound.js', 'js/prices.js', 'js/library.js', 'js/learn.js', 'js/auth.js', 'js/authtext.js', 'js/tour.js', 'icons/icon-192.png', 'icons/icon-512.png', 'icons/apple-touch-icon.png'];
 
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(SHELL)).then(() => self.skipWaiting()));
