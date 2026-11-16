@@ -337,3 +337,10 @@ button, a, label, select, input, summary, [data-act], .btn, .opt, .day, .treeSvg
 .rcCode { font: 700 20px/1.4 ui-monospace, Menlo, Consolas, monospace; letter-spacing: .06em; text-align: center; padding: 14px 8px; margin: 10px 0; border: 1px dashed var(--amber); border-radius: 12px; background: rgba(0, 0, 0, .3); -webkit-user-select: all; user-select: all; overflow-wrap: anywhere; }
 .modal h4 { margin: 16px 0 6px; }
 .modal form + .btn, .modal .btn + form { margin-top: 8px; }
+
+/* общий капитал */
+.capital .big { font-size: 30px; line-height: 1.15; margin: 2px 0 4px; overflow-wrap: anywhere; }
+.capital summary { cursor: pointer; min-height: 44px; display: flex; align-items: center; list-style: none; color: var(--accent, #f2bd4b); font-weight: 700; }
+.capital summary::-webkit-details-marker { display: none; }
+.capital summary::after { content: '▾'; margin-left: 8px; }
+.capital details[open] summary::after { content: '▴'; }

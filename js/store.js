@@ -1,8 +1,8 @@
 // Хранилище: всегда сохраняет локально, а если облако подключено и человек вошёл, синхронизирует с Supabase.
-import { SUPABASE_URL, SUPABASE_ANON_KEY, AUTH_DOMAIN } from '../config.js?v=0.9.3';
-import { ymd } from './calc.js?v=0.9.3';
-import { identToEmail, normIdent, isEmail } from './auth.js?v=0.9.3';
-import { mergeStates } from './merge.js?v=0.9.3';
+import { SUPABASE_URL, SUPABASE_ANON_KEY, AUTH_DOMAIN } from '../config.js?v=0.9.4';
+import { ymd } from './calc.js?v=0.9.4';
+import { identToEmail, normIdent, isEmail } from './auth.js?v=0.9.4';
+import { mergeStates } from './merge.js?v=0.9.4';
 
 const LS = 'tgm_state_v1';
 const SUPABASE_ESM = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/+esm';

@@ -360,8 +360,25 @@ export function portfolioStats(state, today) {
 }
 // Сколько ещё можно вложить из корзины «Инвестиции» (пришло минус уже вложенное «из корзины»)
 export const investAvailable = (state) => round2(investTotal(state) - sum((state.holdings || []).flatMap((h) => h.lots || []).filter((l) => l.fromBasket), (l) => l.amount));
-// Чистый капитал: подушка + портфель − долги
-export const netWorth = (state, today) => round2(cushionTotal(state) + portfolioStats(state, today).value - debtTotal(state) + loansReceivable(state));
+// Общий капитал: сколько сейчас во всех горшках, плюс то, что должны тебе, минус твои долги.
+// «Нужды», «Долги», «Радость»: остаток этого месяца (пришло минус потрачено). «Подушка»: всё накопленное.
+// «Инвестиции»: деньги в горшке, которые ещё не вложены, плюс текущая стоимость вложений.
+export function capital(state, today = ymd()) {
+  const st = basketStats(state, today);
+  const jars = {
+    needs: st.needs.left,
+    debts: st.debts.left,
+    cushion: cushionTotal(state),
+    invest: round2(investAvailable(state) + portfolioStats(state, today).value),
+    joy: st.joy.left,
+  };
+  const total = round2(Object.values(jars).reduce((a, b) => a + b, 0));
+  const owedToMe = loansReceivable(state);
+  const debt = debtTotal(state);
+  return { jars, total, owedToMe, debt, net: round2(total + owedToMe - debt) };
+}
+// Чистый капитал = общий капитал после вычета долгов
+export const netWorth = (state, today) => capital(state, today).net;
 
 // ---------- закрытие месяца: куда уходит непотраченное ----------
 // Доля остатка «радости», которая остаётся в радости (остальное уходит в приоритетную корзину)

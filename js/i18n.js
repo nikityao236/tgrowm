@@ -1,6 +1,6 @@
 // Все тексты интерфейса в одном месте: русский, английский, польский, испанский.
 // Тексты входа и аккаунта лежат в js/authtext.js и добавляются к словарю ниже.
-import { AUTH_T } from './authtext.js?v=0.9.3';
+import { AUTH_T } from './authtext.js?v=0.9.4';
 export const LANGS = ['ru', 'en', 'pl', 'es'];
 export const LANG_NAMES = { ru: 'Русский', en: 'English', pl: 'Polski', es: 'Español' };
 
@@ -154,7 +154,10 @@ const D = {
     inv_add: 'Добавить вложение', inv_name_ph: 'например: ETF на S&P 500, Bitcoin', inv_type: 'Вид вложения', inv_name: 'Куда вложил',
     ty_etf: 'Фонд (ETF)', ty_stock: 'Акции', ty_crypto: 'Крипта', ty_deposit: 'Вклад, облигации', ty_skills: 'Навыки и учёба', ty_business: 'Свой бизнес', ty_other: 'Другое',
     inv_amount: 'Сколько вложил', inv_rate: 'Ожидаемый процент в год', inv_rate_hint: 'Для акций и крипты процент не гарантирован: впиши ожидание или 0 и обновляй стоимость вручную.',
-    inv_from_basket: 'Взять из корзины «Инвестиции»', inv_invested: 'Вложено', inv_value: 'Сейчас стоит', inv_growth: 'Рост', inv_networth: 'Чистый капитал', inv_networth_hint: 'Подушка + вложения − долги',
+    inv_from_basket: 'Взять из корзины «Инвестиции»', inv_invested: 'Вложено', inv_value: 'Сейчас стоит', inv_growth: 'Рост', inv_networth: 'Чистый капитал', inv_networth_hint: 'Все горшки + вложения + мне должны − долги',
+    cap_title: 'Общий капитал', cap_hint: 'Всё в горшках минус долги', cap_jars: 'По горшкам', cap_total: 'Всего в горшках', cap_owed: 'Мне должны', cap_debts: 'Мои долги',
+    cap_note: 'Нужды, Долги и Радость: остаток этого месяца. Подушка и Инвестиции: всё накопленное, вместе с вложениями.',
+    tour_capital: 'Общий капитал: сколько у тебя всего во всех горшках после вычета долгов. Нажми «По горшкам», чтобы увидеть, сколько в каждом.',
     inv_available: 'В корзине инвестиций доступно', inv_topup: 'Докупить', inv_update: 'Обновить стоимость', inv_update_title: 'Текущая стоимость', inv_cur_value: 'Сколько стоит сейчас',
     inv_empty: 'Пока нет вложений. Добавь первое: куда, сколько и под какой процент.', inv_by_type: 'По видам', inv_note: 'Проценты ожидаемые, не гарантия. Цены акций и крипты подтянем автоматически позже.',
     inv_over: 'Вложено больше, чем пришло в корзину инвестиций. Это нормально, если вкладываешь свои деньги.', inv_pick: 'Какое вложение', inv_delete_q: 'Удалить это вложение?', err_pct: 'Процент от 0 до 1000', inv_since: 'с', inv_exceeds: 'Больше, чем есть в корзине (доступно {a}). Сними галочку, если вкладываешь другие деньги.',
@@ -325,7 +328,10 @@ const D = {
     inv_add: 'Add investment', inv_name_ph: 'e.g. S&P 500 ETF, Bitcoin', inv_type: 'Type', inv_name: 'Where did you invest',
     ty_etf: 'Fund (ETF)', ty_stock: 'Stocks', ty_crypto: 'Crypto', ty_deposit: 'Deposit, bonds', ty_skills: 'Skills and study', ty_business: 'Own business', ty_other: 'Other',
     inv_amount: 'Amount invested', inv_rate: 'Expected % per year', inv_rate_hint: 'Stock and crypto returns are not guaranteed: enter your expectation or 0 and update the value by hand.',
-    inv_from_basket: 'Take from the Investments basket', inv_invested: 'Invested', inv_value: 'Worth now', inv_growth: 'Growth', inv_networth: 'Net worth', inv_networth_hint: 'Cushion + investments − debts',
+    inv_from_basket: 'Take from the Investments basket', inv_invested: 'Invested', inv_value: 'Worth now', inv_growth: 'Growth', inv_networth: 'Net worth', inv_networth_hint: 'All jars + investments + owed to me − debts',
+    cap_title: 'Total capital', cap_hint: 'Everything in the jars minus debts', cap_jars: 'By jar', cap_total: 'Total in the jars', cap_owed: 'Owed to me', cap_debts: 'My debts',
+    cap_note: 'Needs, Debts and Joy: what is left this month. Cushion and Investments: everything saved, including investments.',
+    tour_capital: 'Total capital: how much you have in all the jars after subtracting debts. Tap "By jar" to see how much is in each.',
     inv_available: 'Available in the investments basket', inv_topup: 'Top up', inv_update: 'Update value', inv_update_title: 'Current value', inv_cur_value: 'Worth right now',
     inv_empty: 'No investments yet. Add the first one: where, how much and at what percent.', inv_by_type: 'By type', inv_note: 'Percentages are expectations, not guarantees. Stock and crypto prices will be fetched automatically later.',
     inv_over: 'You invested more than came into the investments basket. That is fine if you use your own money.', inv_pick: 'Which investment', inv_delete_q: 'Delete this investment?', err_pct: 'Percent from 0 to 1000', inv_since: 'since', inv_exceeds: 'More than the basket holds ({a} available). Untick the box if you invest other money.',
@@ -496,7 +502,10 @@ const D = {
     inv_add: 'Dodaj inwestycję', inv_name_ph: 'np. ETF na S&P 500, Bitcoin', inv_type: 'Rodzaj', inv_name: 'Gdzie zainwestowałeś',
     ty_etf: 'Fundusz (ETF)', ty_stock: 'Akcje', ty_crypto: 'Krypto', ty_deposit: 'Lokata, obligacje', ty_skills: 'Umiejętności i nauka', ty_business: 'Własny biznes', ty_other: 'Inne',
     inv_amount: 'Ile zainwestowałeś', inv_rate: 'Oczekiwane % rocznie', inv_rate_hint: 'Zyski z akcji i krypto nie są gwarantowane: wpisz oczekiwanie lub 0 i aktualizuj wartość ręcznie.',
-    inv_from_basket: 'Weź z koszyka Inwestycje', inv_invested: 'Zainwestowano', inv_value: 'Teraz warte', inv_growth: 'Wzrost', inv_networth: 'Wartość netto', inv_networth_hint: 'Poduszka + inwestycje − długi',
+    inv_from_basket: 'Weź z koszyka Inwestycje', inv_invested: 'Zainwestowano', inv_value: 'Teraz warte', inv_growth: 'Wzrost', inv_networth: 'Wartość netto', inv_networth_hint: 'Wszystkie słoiki + inwestycje + należności − długi',
+    cap_title: 'Kapitał ogółem', cap_hint: 'Wszystko w słoikach minus długi', cap_jars: 'Wg słoików', cap_total: 'Razem w słoikach', cap_owed: 'Ktoś mi wisi', cap_debts: 'Moje długi',
+    cap_note: 'Potrzeby, Długi i Radość: to, co zostało w tym miesiącu. Poduszka i Inwestycje: wszystko, co zebrane, razem z inwestycjami.',
+    tour_capital: 'Kapitał ogółem: ile masz w sumie we wszystkich słoikach po odjęciu długów. Dotknij „Wg słoików”, żeby zobaczyć, ile jest w każdym.',
     inv_available: 'Dostępne w koszyku inwestycji', inv_topup: 'Dokup', inv_update: 'Zaktualizuj wartość', inv_update_title: 'Aktualna wartość', inv_cur_value: 'Ile warte teraz',
     inv_empty: 'Brak inwestycji. Dodaj pierwszą: gdzie, ile i na jaki procent.', inv_by_type: 'Według rodzaju', inv_note: 'Procenty są oczekiwaniami, nie gwarancją. Ceny akcji i krypto pobierzemy automatycznie później.',
     inv_over: 'Zainwestowano więcej, niż wpłynęło do koszyka inwestycji. To w porządku, jeśli wkładasz własne pieniądze.', inv_pick: 'Która inwestycja', inv_delete_q: 'Usunąć tę inwestycję?', err_pct: 'Procent od 0 do 1000', inv_since: 'od', inv_exceeds: 'Więcej, niż jest w koszyku (dostępne {a}). Odznacz pole, jeśli inwestujesz inne pieniądze.',
@@ -667,7 +676,10 @@ const D = {
     inv_add: 'Añadir inversión', inv_name_ph: 'p. ej. ETF del S&P 500, Bitcoin', inv_type: 'Tipo', inv_name: 'Dónde invertiste',
     ty_etf: 'Fondo (ETF)', ty_stock: 'Acciones', ty_crypto: 'Cripto', ty_deposit: 'Depósito, bonos', ty_skills: 'Habilidades y estudio', ty_business: 'Negocio propio', ty_other: 'Otro',
     inv_amount: 'Cuánto invertiste', inv_rate: '% anual esperado', inv_rate_hint: 'El rendimiento de acciones y cripto no está garantizado: pon tu expectativa o 0 y actualiza el valor a mano.',
-    inv_from_basket: 'Tomar de la cesta Inversiones', inv_invested: 'Invertido', inv_value: 'Vale ahora', inv_growth: 'Crecimiento', inv_networth: 'Patrimonio neto', inv_networth_hint: 'Colchón + inversiones − deudas',
+    inv_from_basket: 'Tomar de la cesta Inversiones', inv_invested: 'Invertido', inv_value: 'Vale ahora', inv_growth: 'Crecimiento', inv_networth: 'Patrimonio neto', inv_networth_hint: 'Todos los tarros + inversiones + me deben − deudas',
+    cap_title: 'Capital total', cap_hint: 'Todo lo que hay en los tarros menos deudas', cap_jars: 'Por tarro', cap_total: 'Total en los tarros', cap_owed: 'Me deben', cap_debts: 'Mis deudas',
+    cap_note: 'Necesidades, Deudas y Alegría: lo que queda este mes. Colchón e Inversiones: todo lo acumulado, con las inversiones.',
+    tour_capital: 'Capital total: cuánto tienes en todos los tarros después de restar las deudas. Toca «Por tarro» para ver cuánto hay en cada uno.',
     inv_available: 'Disponible en la cesta de inversiones', inv_topup: 'Aportar más', inv_update: 'Actualizar valor', inv_update_title: 'Valor actual', inv_cur_value: 'Cuánto vale ahora',
     inv_empty: 'Aún no hay inversiones. Añade la primera: dónde, cuánto y a qué porcentaje.', inv_by_type: 'Por tipo', inv_note: 'Los porcentajes son expectativas, no garantías. Los precios de acciones y cripto se traerán automáticamente más adelante.',
     inv_over: 'Invertiste más de lo que entró en la cesta de inversiones. Está bien si usas tu propio dinero.', inv_pick: 'Qué inversión', inv_delete_q: '¿Borrar esta inversión?', err_pct: 'Porcentaje de 0 a 1000', inv_since: 'desde', inv_exceeds: 'Más de lo que hay en la cesta ({a} disponible). Desmarca la casilla si inviertes otro dinero.',

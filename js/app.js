@@ -1,14 +1,14 @@
 // TGM — To Grow Money. Экраны и действия.
-import { t, setLang, getLang, LANGS, LANG_NAMES } from './i18n.js?v=0.9.3';
-import { store } from './store.js?v=0.9.3';
-import * as C from './calc.js?v=0.9.3';
-import { snd } from './sound.js?v=0.9.3';
-import * as P from './prices.js?v=0.9.3';
-import { LIBRARY } from './library.js?v=0.9.3';
-import { LEARN } from './learn.js?v=0.9.3';
-import * as A from './auth.js?v=0.9.3';
-import { REQUIRE_ACCOUNT, AUTH_DOMAIN, SITE_URL } from '../config.js?v=0.9.3';
-import { TOUR_STEPS, tipPosition } from './tour.js?v=0.9.3';
+import { t, setLang, getLang, LANGS, LANG_NAMES } from './i18n.js?v=0.9.4';
+import { store } from './store.js?v=0.9.4';
+import * as C from './calc.js?v=0.9.4';
+import { snd } from './sound.js?v=0.9.4';
+import * as P from './prices.js?v=0.9.4';
+import { LIBRARY } from './library.js?v=0.9.4';
+import { LEARN } from './learn.js?v=0.9.4';
+import * as A from './auth.js?v=0.9.4';
+import { REQUIRE_ACCOUNT, AUTH_DOMAIN, SITE_URL } from '../config.js?v=0.9.4';
+import { TOUR_STEPS, tipPosition } from './tour.js?v=0.9.4';
 
 const CURRENCIES = ['USD', 'BYN', 'RUB', 'PLN', 'UAH', 'EUR'];
 const LOCALE = { ru: 'ru-RU', en: 'en-US', pl: 'pl-PL', es: 'es-ES' };
@@ -16,7 +16,7 @@ const CATS = ['food', 'home', 'utilities', 'transport', 'comm', 'health', 'fun',
 const NEED_CATS = new Set(['food', 'home', 'utilities', 'transport', 'comm', 'health']);
 const STEPS = ['lang', 'cur', 'auth', 'income', 'debts', 'cushion', 'needs', 'food', 'fun', 'waste', 'mode', 'plan'];
 const OB = 'tgm_ob';
-const APP_VERSION = '0.9.3 (этап 3, проверка и синхронизация)';
+const APP_VERSION = '0.9.4 (этап 3, общий капитал)';
 const ui = { screen: 'today', modal: null, step: 0, draft: null, cal: { month: null, sel: null }, acc: { tab: 'signup' }, fg: {}, rc: {}, busy: false, afterAuth: false };
 const $app = document.getElementById('app');
 const S = () => store.state;
@@ -794,12 +794,21 @@ function weekCard(today) {
   return `<section class="card"><h3>${t('wk_title')}</h3><p class="muted small">${t('wk_card_text')}</p><button class="btn primary" data-act="openWeek">${t('wk_open')}</button></section>`;
 }
 
+// Общий капитал: все горшки, плюс «мне должны», минус долги. Подробности по горшкам раскрываются по нажатию
+function capitalCard() {
+  const cp = C.capital(S(), C.ymd());
+  const rows = C.BASKETS.map((k) => kv(BNAME(k), money(cp.jars[k]), cp.jars[k] < 0 ? 'amber' : '')).join('');
+  const extra = (cp.owedToMe > 0 ? kv(t('cap_owed'), '+' + money(cp.owedToMe), 'good') : '') + kv(t('cap_debts'), cp.debt > 0 ? '−' + money(cp.debt) : money(0), cp.debt > 0 ? 'amber' : '');
+  return `<section class="card capital"><div class="label">${t('cap_title')}</div><div class="big ${cp.net < 0 ? 'amber' : ''}">${money(cp.net)}</div><div class="muted small">${t('cap_hint')}</div>
+<details><summary>${t('cap_jars')}</summary>${rows}${kv(t('cap_total'), money(cp.total), 'gold')}${extra}<p class="muted small">${t('cap_note')}</p></details></section>`;
+}
+
 function vToday() {
   const today = C.ymd();
   const recent = allEntries().slice(0, 8).map(rowHtml).join('');
   return `${treeCard()}
 <div class="actions"><button class="btn primary" data-act="openExpense">− ${t('btn_expense')}</button><button class="btn" data-act="openIncome">+ ${t('btn_income')}</button><button class="btn ghost" data-act="noSpend">${t('btn_nospend')}</button></div>
-${weekCard(today)}${payCard(today)}${workCard()}${pilotCard(today)}${marketCard()}
+${capitalCard()}${weekCard(today)}${payCard(today)}${workCard()}${pilotCard(today)}${marketCard()}
 <section class="card"><h3>${t('recent')}</h3>${recent || `<p class="muted">${t('recent_empty')}</p>`}</section>`;
 }
 

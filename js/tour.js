@@ -14,6 +14,7 @@ export const TOUR_STEPS = [
   { id: 'expense', screen: 'today', sel: 'main .actions [data-act="openExpense"]', title: 'btn_expense' },
   { id: 'income', screen: 'today', sel: 'main .actions [data-act="openIncome"]', title: 'btn_income' },
   { id: 'nospend', screen: 'today', sel: 'main .actions [data-act="noSpend"]', title: 'btn_nospend' },
+  { id: 'capital', screen: 'today', sel: '.card.capital', title: 'cap_title' },
   { id: 'work', screen: 'today', sel: '.card.work', title: 'tour_work_t' },
   { id: 'pilot', screen: 'today', sel: '.card.pilot', title: 'pilot_title' },
   { id: 'market', screen: 'today', sel: '.card.market', title: 'mkt_title' },
