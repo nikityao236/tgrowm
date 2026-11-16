@@ -1,14 +1,15 @@
 // TGM — To Grow Money. Экраны и действия.
-import { t, setLang, getLang, LANGS, LANG_NAMES } from './i18n.js?v=0.9.4';
-import { store } from './store.js?v=0.9.4';
-import * as C from './calc.js?v=0.9.4';
-import { snd } from './sound.js?v=0.9.4';
-import * as P from './prices.js?v=0.9.4';
-import { LIBRARY } from './library.js?v=0.9.4';
-import { LEARN } from './learn.js?v=0.9.4';
-import * as A from './auth.js?v=0.9.4';
-import { REQUIRE_ACCOUNT, AUTH_DOMAIN, SITE_URL } from '../config.js?v=0.9.4';
-import { TOUR_STEPS, tipPosition } from './tour.js?v=0.9.4';
+import { t, setLang, getLang, LANGS, LANG_NAMES } from './i18n.js?v=0.9.6';
+import { store } from './store.js?v=0.9.6';
+import * as C from './calc.js?v=0.9.6';
+import { snd } from './sound.js?v=0.9.6';
+import * as P from './prices.js?v=0.9.6';
+import { LIBRARY } from './library.js?v=0.9.6';
+import { LEARN } from './learn.js?v=0.9.6';
+import * as A from './auth.js?v=0.9.6';
+import { REQUIRE_ACCOUNT, AUTH_DOMAIN, SITE_URL, VAPID_PUBLIC } from '../config.js?v=0.9.6';
+import { pushInfo, pushSubscribe, pushUnsubscribe } from './push.js?v=0.9.6';
+import { TOUR_STEPS, tipPosition } from './tour.js?v=0.9.6';
 
 const CURRENCIES = ['USD', 'BYN', 'RUB', 'PLN', 'UAH', 'EUR'];
 const LOCALE = { ru: 'ru-RU', en: 'en-US', pl: 'pl-PL', es: 'es-ES' };
@@ -16,7 +17,7 @@ const CATS = ['food', 'home', 'utilities', 'transport', 'comm', 'health', 'fun',
 const NEED_CATS = new Set(['food', 'home', 'utilities', 'transport', 'comm', 'health']);
 const STEPS = ['lang', 'cur', 'auth', 'income', 'debts', 'cushion', 'needs', 'food', 'fun', 'waste', 'mode', 'plan'];
 const OB = 'tgm_ob';
-const APP_VERSION = '0.9.4 (этап 3, общий капитал)';
+const APP_VERSION = '0.9.6 (этап 3, зарплата, долги, уведомления)';
 const ui = { screen: 'today', modal: null, step: 0, draft: null, cal: { month: null, sel: null }, acc: { tab: 'signup' }, fg: {}, rc: {}, busy: false, afterAuth: false };
 const $app = document.getElementById('app');
 const S = () => store.state;
@@ -451,10 +452,11 @@ function treeCard() {
   const big = waiting ? '—' : lim.over ? t('today_over_short') : money(lim.left);
   const prelim = C.pilotStatus(S(), today) === 'running' && !waiting ? ` <span class="tag">${t('prelim')}</span>` : '';
   const np = g - stage;
+  const wk = C.weekLimit(S(), today);
   return `<section class="scene" data-mood="${mood}"><div class="sceneArt">${treeScene(g, mood, ba, anim)}</div>
 <div class="sign" role="group" aria-label="${esc(t('today_can'))}"><span class="sglow" aria-hidden="true"></span><small>${t('today_can')}</small><b class="${lim.over ? 'amber' : ''}">${esc(big)}</b>${waiting ? '' : `<i>${t('today_days', { n: lim.daysLeft })}${prelim}</i>`}</div>
 <button class="buddy" data-act="talkGnome" aria-label="${esc(t('gn_talk'))}">${gnomeSvg('gardener')}<span class="hint" aria-hidden="true">…</span></button><button class="sndbtn" data-act="cycleSound" aria-label="${esc(t('set_sound'))}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor" stroke="none"/>${S().profile.sound === 'off' ? '<path d="M16 9l5 6M21 9l-5 6"/>' : S().profile.sound === 'all' ? '<path d="M16 8.5a5 5 0 0 1 0 7M18.8 6a9 9 0 0 1 0 12"/>' : '<path d="M16 9a4 4 0 0 1 0 6"/>'}</svg></button></section>
-<section class="card stagebox"><div class="between"><h3>${esc(t('tree_stage', { n: stage, name: t('st_' + stage) }))}</h3>${stage < C.TREE_MAX ? `<span class="muted small">${Math.round(np * 100)}%</span>` : ''}</div>${stage < C.TREE_MAX ? bar(np, 'b-invest') : ''}<p class="muted small">${stage >= C.TREE_MAX ? t('tree_max') : t('tree_next', { goal: t('goal_' + (stage + 1)) })}</p>${waiting ? `<p class="small">${t('calc_wait')}</p>` : ''}<p class="muted small">${t('roots_hint')}</p><p class="muted small startline">${t('started')}: ${esc(longDate(S().profile.startDate || today))}</p></section>`;
+<section class="card stagebox"><div class="between"><h3>${esc(t('tree_stage', { n: stage, name: t('st_' + stage) }))}</h3>${stage < C.TREE_MAX ? `<span class="muted small">${Math.round(np * 100)}%</span>` : ''}</div>${stage < C.TREE_MAX ? bar(np, 'b-invest') : ''}<p class="muted small">${stage >= C.TREE_MAX ? t('tree_max') : t('tree_next', { goal: t('goal_' + (stage + 1)) })}</p>${waiting ? `<p class="small">${t('calc_wait')}</p>` : ''}${waiting ? '' : `<p class="small ${wk.over ? 'amber' : ''}">${wk.over ? t('week_over') : t('week_left', { a: money(wk.left) })}</p>`}<p class="muted small">${t('roots_hint')}</p><p class="muted small startline">${t('started')}: ${esc(longDate(S().profile.startDate || today))}</p></section>`;
 }
 
 
@@ -794,15 +796,35 @@ function weekCard(today) {
   return `<section class="card"><h3>${t('wk_title')}</h3><p class="muted small">${t('wk_card_text')}</p><button class="btn primary" data-act="openWeek">${t('wk_open')}</button></section>`;
 }
 
+// Подсказка про зарплату: когда ждать, сегодня ли она, не задерживается ли
+function payNote() {
+  const ps = C.payStatus(S(), C.ymd());
+  if (!ps) return '';
+  const date = longDate(ps.date);
+  if (ps.state === 'today') return `<div class="paynote hot"><p>${t('pay_today')}</p><button class="btn primary" data-act="openIncome">${t('pay_add')}</button></div>`;
+  if (ps.state === 'late') return `<div class="paynote hot"><p>${t('pay_late', { n: ps.days, date })}</p><button class="btn primary" data-act="openIncome">${t('pay_add')}</button></div>`;
+  return `<p class="muted small paynote">${t(ps.state === 'soon' ? 'pay_soon' : 'pay_done', { n: ps.days, date })}</p>`;
+}
+// Цель «закрыть долги»: сколько погашено, когда закроются, и совет про подушку
+function debtGoalBlock() {
+  const today = C.ymd();
+  const g = C.debtGoal(S(), today);
+  if (!g) return '';
+  if (g.done) return `<div class="dgoal"><h4>${t('dg_title')}</h4>${bar(1, 'b-invest')}<p class="small">${t('dg_done')}</p></div>`;
+  const cm = C.cushionMonths(S(), today);
+  const eta = g.eta ? dfmt(g.eta + '-01', { month: 'long', year: 'numeric' }) : '';
+  return `<div class="dgoal"><h4>${t('dg_title')}</h4>${bar(g.progress, 'b-invest')}<p class="small">${t('dg_line', { p: money(g.paid), i: money(g.initial) })}</p><p class="muted small">${eta ? t('dg_eta', { n: g.monthsLeft, m: eta }) : t('dg_nopace')}</p>${cm != null && cm >= 1 ? `<p class="muted small">${t('dg_tip', { n: Math.floor(cm) })}</p>` : ''}</div>`;
+}
+
 // Общий капитал: все горшки, плюс «мне должны», минус долги. Подробности по горшкам раскрываются по нажатию
 function capitalCard() {
   const cp = C.capital(S(), C.ymd());
+  const pn = payNote();
   const rows = C.BASKETS.map((k) => kv(BNAME(k), money(cp.jars[k]), cp.jars[k] < 0 ? 'amber' : '')).join('');
   const extra = (cp.owedToMe > 0 ? kv(t('cap_owed'), '+' + money(cp.owedToMe), 'good') : '') + kv(t('cap_debts'), cp.debt > 0 ? '−' + money(cp.debt) : money(0), cp.debt > 0 ? 'amber' : '');
-  return `<section class="card capital"><div class="label">${t('cap_title')}</div><div class="big ${cp.net < 0 ? 'amber' : ''}">${money(cp.net)}</div><div class="muted small">${t('cap_hint')}</div>
-<details><summary>${t('cap_jars')}</summary>${rows}${kv(t('cap_total'), money(cp.total), 'gold')}${extra}<p class="muted small">${t('cap_note')}</p></details></section>`;
+  return `<section class="card capital"><div class="label">${t('cap_title')}</div><div class="big ${cp.net < 0 ? 'amber' : ''}">${money(cp.net)}</div><div class="muted small">${t('cap_hint')}</div>${cp.waitIncome > 0 && !/paynote hot/.test(pn) ? `<p class="small amber">${t('cap_wait', { a: money(cp.waitIncome) })}</p>` : ''}${pn}
+<details><summary>${t('cap_jars')}</summary>${rows}${kv(t('cap_total'), money(cp.total), 'gold')}${extra}<p class="muted small">${t('cap_note')}</p></details>${debtGoalBlock()}</section>`;
 }
-
 function vToday() {
   const today = C.ymd();
   const recent = allEntries().slice(0, 8).map(rowHtml).join('');
@@ -1177,6 +1199,27 @@ function budgetCard() {
   return `<section class="card"><h3>${t('bud_title')}</h3>${kv(t('bud_needs'), money(C.needsMonthly(ep)))}${kv(t('bud_income'), money(Number(inc) || 0))}${note}<button class="btn" data-act="openBudget">${t('bud_edit')}</button></section>`;
 }
 
+// Уведомления: включение на этом телефоне и выбор, о чём напоминать. Присылает их серверная функция tgm-push.
+const PUSH_KINDS = ['payday', 'evening', 'bills', 'weekly'];
+function pushCard() {
+  if (!store.cloud.enabled) return '';
+  if (!ui.pushInfo) {
+    ui.pushInfo = { loading: true };
+    pushInfo().then((i) => { ui.pushInfo = i; if (ui.screen === 'more' && !ui.modal) render(); });
+  }
+  const i = ui.pushInfo;
+  const pr = S().profile.push || {};
+  let body = '';
+  if (i.loading) body = '';
+  else if (!i.supported) body = `<p class="muted small">${t('nf_unsupported')}</p>`;
+  else if (!store.cloud.user) body = `<p class="muted small">${t('nf_need_account')}</p>`;
+  else if (i.subscribed && i.permission === 'granted') {
+    body = `<p class="small">${t('nf_on')}</p>${PUSH_KINDS.map((k) => `<label class="check2"><input type="checkbox" data-change="setPushPref" data-k="${k}" ${pr[k] === false ? '' : 'checked'}><span>${t('nf_' + k)}</span></label>`).join('')}<button class="btn" data-act="testPush">${t('nf_test')}</button><button class="btn ghost" data-act="disablePush">${t('nf_disable')}</button>`;
+  } else if (i.permission === 'denied') body = `<p class="warnbox">${t('nf_denied')}</p>`;
+  else body = `<button class="btn primary" data-act="enablePush">${t('nf_enable')}</button>`;
+  return `<section class="card"><h3>${t('nf_title')}</h3><p class="muted small">${t('nf_text')}</p>${body}</section>`;
+}
+
 function vMore() {
   const p = S().profile;
   const left = modeLeft();
@@ -1201,8 +1244,10 @@ ${field(t('set_rollover'), sel('s_ro', 'setRollover', [['split', t('ro_split')],
 ${field(t('set_sound'), sel('s_snd', 'setSoundS', [['off', t('snd_off')], ['fx', t('snd_fx')], ['all', t('snd_all')]], p.sound || 'fx'))}
 ${field(t('set_grumpy'), sel('s_gr', 'setGrumpy', [['on', t('opt_on')], ['off', t('opt_off')]], p.grumpy === false ? 'off' : 'on'))}
 ${field(t('set_theme'), sel('s_theme', 'setTheme', [['dark', t('theme_dark')], ['light', t('theme_light')]], S().theme))}
+${field(t('set_payday'), sel('s_pd', 'setPayDay', [['0', t('set_payday_auto')], ...Array.from({ length: 31 }, (_, i) => [String(i + 1), String(i + 1)])], String(Number(p.payDay) || 0)))}<p class="muted small">${t('set_payday_hint')}</p>
 ${field(t('set_tz'), sel('s_tz', 'setTzS', zones.map((z) => [z, z]), p.tz))}
 ${kv(t('set_start'), esc(longDate(p.startDate || C.ymd())))}</section>
+${pushCard()}
 <section class="card"><h3>${t('set_account')}</h3><p class="muted small">${syncText()}</p>${account}${legal}</section>
 <section class="card"><button class="btn" data-act="exportCsv">${t('set_export')}</button><button class="btn danger" data-act="wipe">${t('set_delete')}</button></section>
 <p class="muted small center">${t('set_version')}: ${APP_VERSION}</p>
@@ -2295,6 +2340,26 @@ const actions = {
   setTheme(el) { store.update((s) => { s.theme = el.value === 'light' ? 'light' : 'dark'; }); applyTheme(); render(); },
   setTzS(el) { store.update((s) => { s.profile.tz = el.value; }); applyTz(); render(); },
   setRollover(el) { store.update((s) => { s.profile.rolloverRule = ['split', 'joy', 'priority'].includes(el.value) ? el.value : 'split'; }); render(); },
+  setPayDay(el) { const n = Number(el.value); store.update((s) => { if (n >= 1 && n <= 31) s.profile.payDay = n; else delete s.profile.payDay; }); render(); },
+  setPushPref(el) { const k = el.dataset.k; if (!PUSH_KINDS.includes(k)) return; store.update((s) => { s.profile.push = { ...(s.profile.push || {}), [k]: el.checked }; }); },
+  async enablePush() {
+    if (!store.cloud.user) return toast(t('nf_need_account'), true);
+    const r = await pushSubscribe(VAPID_PUBLIC);
+    if (r.error) { toast(t(r.error === 'denied' ? 'nf_denied' : r.error === 'unsupported' ? 'nf_unsupported' : 'nf_failed'), true); ui.pushInfo = null; return render(); }
+    const k = r.sub.keys || {};
+    const res = await store.fn('subscribe', { endpoint: r.sub.endpoint, p256dh: k.p256dh, auth: k.auth }, 'tgm-push');
+    if (res.error) { await pushUnsubscribe(); toast(t('nf_server'), true); ui.pushInfo = null; return render(); }
+    ui.pushInfo = null; toast(t('nf_on')); render();
+  },
+  async disablePush() {
+    const endpoint = await pushUnsubscribe();
+    if (endpoint) await store.fn('unsubscribe', { endpoint }, 'tgm-push');
+    ui.pushInfo = null; toast(t('nf_off')); render();
+  },
+  async testPush() {
+    const res = await store.fn('test', {}, 'tgm-push');
+    toast(res.error ? t('nf_server') : t('nf_sent'), Boolean(res.error));
+  },
   exportCsv,
   async wipe() {
     if (!window.confirm(t('set_delete_q'))) return;
@@ -2302,6 +2367,7 @@ const actions = {
     location.reload();
   },
   async signOut() {
+    try { const ep = await pushUnsubscribe(); if (ep) await store.fn('unsubscribe', { endpoint: ep }, 'tgm-push'); } catch { /* не мешаем выходу */ }
     const r = await store.signOut(false);
     if (r && r.unsynced) { if (!window.confirm(t('so_unsynced'))) return; await store.signOut(true); }
     location.reload();

@@ -13,3 +13,5 @@ export const SITE_URL = 'https://tgrowm.online/';
 // Скрытый домен для логинов без почты. Должен совпадать с секретом AUTH_DOMAIN у функции tgm-recovery.
 // Если Supabase отвергает такой адрес при регистрации, замени на домен, которым владеешь (письма на него не отправляются).
 export const AUTH_DOMAIN = 'login.tgm-app.example';
+// Публичный ключ для push-уведомлений (VAPID). Парный секретный ключ лежит только в настройках Supabase.
+export const VAPID_PUBLIC = 'BHJZi8QFGF25KVL0BiNAloJdu36iUKvot9LMPUDVPPShxjimIVTzwCDOShNRebn-29JjfswYWs3tOAeMYByvFrs';

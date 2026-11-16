@@ -344,3 +344,11 @@ button, a, label, select, input, summary, [data-act], .btn, .opt, .day, .treeSvg
 .capital summary::-webkit-details-marker { display: none; }
 .capital summary::after { content: '▾'; margin-left: 8px; }
 .capital details[open] summary::after { content: '▴'; }
+
+/* день зарплаты, цель по долгам */
+.paynote { margin: 8px 0 4px; }
+.paynote.hot { border: 1px solid var(--accent, #f2bd4b); border-radius: 12px; padding: 10px 12px; }
+.paynote.hot p { margin: 0 0 8px; }
+.dgoal { margin-top: 12px; padding-top: 10px; border-top: 1px solid rgba(255,255,255,.12); }
+.dgoal h4 { margin: 0 0 6px; font-size: 15px; }
+.dgoal p { margin: 6px 0 0; }

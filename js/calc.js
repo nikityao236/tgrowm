@@ -366,20 +366,81 @@ export const investAvailable = (state) => round2(investTotal(state) - sum((state
 // «Инвестиции»: деньги в горшке, которые ещё не вложены, плюс текущая стоимость вложений.
 export function capital(state, today = ymd()) {
   const st = basketStats(state, today);
+  // Месяцы, которые ещё не закрыты: их остатки (нужды, радость) пока лежат «в воздухе», но деньги никуда не делись
+  let pend = 0;
+  pendingMonths(state, today).forEach((m) => { const r = planClosing(state, m).record; if (!r.skipped) pend += r.joyLeft + r.needsLeft; });
   const jars = {
     needs: st.needs.left,
-    debts: st.debts.left,
+    // Платёж по долгу сверх того, что пришло в корзину, это деньги из кармана: корзина уходит в минус, капитал не растёт
+    debts: round2(st.debts.allocated - st.debts.spent),
     cushion: cushionTotal(state),
     invest: round2(investAvailable(state) + portfolioStats(state, today).value),
     joy: st.joy.left,
   };
+  if (pend > 0) jars.joy = round2(jars.joy + pend);
   const total = round2(Object.values(jars).reduce((a, b) => a + b, 0));
   const owedToMe = loansReceivable(state);
   const debt = debtTotal(state);
-  return { jars, total, owedToMe, debt, net: round2(total + owedToMe - debt) };
+  const got = sum((state.incomes || []).filter((i) => monthOf(i.date) === monthOf(today)), (i) => i.amount);
+  const waitIncome = got > 0 ? 0 : expectedMonthly(state, today);
+  return { jars, total, owedToMe, debt, net: round2(total + owedToMe - debt), waitIncome };
 }
 // Чистый капитал = общий капитал после вычета долгов
 export const netWorth = (state, today) => capital(state, today).net;
+
+// ---------- день зарплаты ----------
+const clampDay = (ym, day) => { const [y, m] = ym.split('-').map(Number); return Math.min(Math.max(1, day), new Date(y, m, 0).getDate()); };
+// Типичный день месяца, когда приходят деньги: задан вручную (profile.payDay) или среднее по последним доходам (нужно 2 дохода в разных месяцах)
+export function typicalPayDay(state) {
+  const manual = Number(state.profile && state.profile.payDay);
+  if (manual >= 1 && manual <= 31) return Math.round(manual);
+  const big = (state.incomes || []).filter((i) => i.amount > 0).slice().sort((a, b) => (a.date < b.date ? 1 : -1));
+  const byMonth = new Map();
+  for (const i of big) if (!byMonth.has(monthOf(i.date)) && byMonth.size < 4) byMonth.set(monthOf(i.date), Number(i.date.slice(8, 10)));
+  if (byMonth.size < 2) return 0;
+  const days = [...byMonth.values()].sort((a, b) => a - b);
+  return days[Math.floor(days.length / 2)];
+}
+// Когда ждать деньги. state: 'today' (сегодня), 'soon' (впереди), 'late' (день прошёл, дохода в месяце нет), 'done' (в этом месяце уже пришло)
+export function payStatus(state, today = ymd()) {
+  const day = typicalPayDay(state);
+  if (!day) return null;
+  const mk = monthOf(today);
+  const got = sum((state.incomes || []).filter((i) => monthOf(i.date) === mk), (i) => i.amount);
+  const thisM = `${mk}-${pad(clampDay(mk, day))}`;
+  const nxM = monthAdd(mk, 1);
+  const nextM = `${nxM}-${pad(clampDay(nxM, day))}`;
+  if (got > 0) return { state: 'done', day, date: nextM, days: diffDays(today, nextM), expected: expectedMonthly(state, today) };
+  if (thisM > today) return { state: 'soon', day, date: thisM, days: diffDays(today, thisM), expected: expectedMonthly(state, today) };
+  if (thisM === today) return { state: 'today', day, date: thisM, days: 0, expected: expectedMonthly(state, today) };
+  return { state: 'late', day, date: thisM, days: diffDays(thisM, today), expected: expectedMonthly(state, today) };
+}
+
+// ---------- сколько можно на радость до воскресенья ----------
+// Берём остаток радости этого месяца, делим на оставшиеся дни и умножаем на дни до конца недели (но не дальше конца месяца)
+export function weekLimit(state, today = ymd()) {
+  const lim = todayLimit(state, today);
+  const toSunday = weekdayOf(today) === 0 ? 1 : 8 - weekdayOf(today);
+  const days = Math.max(1, Math.min(toSunday, lim.daysLeft));
+  const monthLeft = round2(lim.joyBudget - lim.before - lim.spentToday);
+  const perDay = lim.joyBudget > 0 ? (lim.joyBudget - lim.before) / lim.daysLeft : 0;
+  return { days, left: round2(Math.max(0, perDay * days - lim.spentToday)), monthLeft, over: monthLeft < 0 };
+}
+
+// ---------- цель «закрыть долги» ----------
+// initial = сколько долга было бы без платежей (остаток + всё выплаченное), progress 0…1, eta = месяц, когда долги закроются при текущем темпе
+export function debtGoal(state, today = ymd()) {
+  const balance = debtTotal(state);
+  const pays = state.payments || [];
+  const paid = round2(sum(pays, (x) => x.amount));
+  const initial = round2(balance + paid);
+  if (initial <= 0) return null;
+  const from = addDays(today, -30);
+  let pace = round2(sum(pays.filter((x) => x.date > from && x.date <= today), (x) => x.amount));
+  if (pace <= 0) { try { pace = round2(plannedFor(state, today, 'debts')); } catch { pace = 0; } }
+  const monthsLeft = balance <= 0 ? 0 : pace > 0 ? Math.ceil(balance / pace) : null;
+  return { initial, paid, balance, progress: Math.min(1, paid / initial), pace, monthsLeft, eta: monthsLeft == null ? null : monthAdd(monthOf(today), monthsLeft), done: balance <= 0 };
+}
 
 // ---------- закрытие месяца: куда уходит непотраченное ----------
 // Доля остатка «радости», которая остаётся в радости (остальное уходит в приоритетную корзину)
@@ -396,14 +457,17 @@ export function priorityBasket(state, date = ymd()) {
   if (needs > 0 && cushionTotal(state) < 3 * needs) return 'cushion';
   return 'invest';
 }
-// Прошедшие месяцы, которые ещё не закрыты (стартовый, пилотный, месяц не закрываем)
+// Прошедшие месяцы, которые ещё не закрыты (текущий не закрываем; стартовый закрываем, если в нём был доход)
 export function pendingMonths(state, today) {
   const p = state.profile;
   if (!p.startDate) return [];
   const done = new Set((state.closings || []).map((c) => c.month));
   const cur = monthOf(today);
   const out = [];
-  for (let m = monthAdd(monthOf(p.startDate), 1); m < cur; m = monthAdd(m, 1)) if (!done.has(m)) out.push(m);
+  // Стартовый месяц тоже закрываем, но только если в нём записан доход: иначе «переносить» нечего
+  const first = monthOf(p.startDate);
+  if (first < cur && !done.has(first) && state.incomes.some((i) => monthOf(i.date) === first)) out.push(first);
+  for (let m = monthAdd(first, 1); m < cur; m = monthAdd(m, 1)) if (!done.has(m)) out.push(m);
   return out;
 }
 export function activeDays(state, m) {

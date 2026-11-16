@@ -1,8 +1,8 @@
 // Хранилище: всегда сохраняет локально, а если облако подключено и человек вошёл, синхронизирует с Supabase.
-import { SUPABASE_URL, SUPABASE_ANON_KEY, AUTH_DOMAIN } from '../config.js?v=0.9.4';
-import { ymd } from './calc.js?v=0.9.4';
-import { identToEmail, normIdent, isEmail } from './auth.js?v=0.9.4';
-import { mergeStates } from './merge.js?v=0.9.4';
+import { SUPABASE_URL, SUPABASE_ANON_KEY, AUTH_DOMAIN } from '../config.js?v=0.9.6';
+import { ymd } from './calc.js?v=0.9.6';
+import { identToEmail, normIdent, isEmail } from './auth.js?v=0.9.6';
+import { mergeStates } from './merge.js?v=0.9.6';
 
 const LS = 'tgm_state_v1';
 const SUPABASE_ESM = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/+esm';
@@ -228,10 +228,10 @@ export const store = {
   // Для тестов: подставить поддельного клиента облака вместо настоящего
   _useClient(c) { client = c; this.cloud.enabled = Boolean(c); this.cloud.ready = true; },
   // Вызов серверной функции tgm-recovery. Возвращает { data } или { error: { code, status } }; код ошибки приходит с сервера
-  async fn(action, body = {}) {
+  async fn(action, body = {}, name = 'tgm-recovery') {
     if (!client) return { error: { code: 'cloud_off', message: 'cloud off' } };
     try {
-      const { data, error } = await client.functions.invoke('tgm-recovery', { body: { action, ...body } });
+      const { data, error } = await client.functions.invoke(name, { body: { action, ...body } });
       if (error) {
         let info = {};
         try { info = await error.context.json(); } catch { /* тела нет: сеть или функция не развёрнута */ }
