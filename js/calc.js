@@ -320,7 +320,8 @@ export function basketStats(state, today) {
     const value = spendable ? used : allocated;
     out[k] = {
       pct: pc[k], planned, allocated, spent: used, spendable,
-      left: spendable ? round2(allocated - used) : null,
+      // Долги: выплата сверх пришедшего в корзину (из своих денег) не минус, а просто «0 осталось»
+      left: spendable ? (k === 'debts' ? Math.max(0, round2(allocated - used)) : round2(allocated - used)) : null,
       value, progress: planned > 0 ? Math.min(1, value / planned) : 0,
     };
   }

@@ -1326,6 +1326,8 @@ ${C.fixedNeeds(S(), today) > 0 && !inc.alloc.needs ? `<p class="muted small">${t
   } else if (m.type === 'pay') {
     const open = S().debts.filter((d) => d.balance > 0).sort((a, b) => b.rate - a.rate);
     inner = `<h3>${t('pay_title')}</h3><form data-submit="savePay">${field(t('pay_pick'), `<select id="m_debt">${open.map((d) => `<option value="${esc(d.id)}">${esc(d.name)} · ${esc(money(d.balance))}</option>`).join('')}</select>`)}${dateField(today)}${field(t('amount'), '<input id="m_amount" inputmode="decimal" data-af autocomplete="off">')}${footBtns()}</form>`;
+  } else if (m.type === 'paySrc') {
+    inner = `<h3>${t('pay_src_title')}</h3><p class="warnbox">${t('pay_src_hint', { n: money(m.short) })}</p><form data-submit="savePaySrc">${field(t('pay_src_label'), `<input id="m_source" data-af autocomplete="off" maxlength="60" placeholder="${esc(t('pay_src_ph'))}">`)}${footBtns()}</form>`;
   } else if (m.type === 'work') {
     const ws = m.edit ? S().shifts.find((x) => x.id === m.edit && x.end) : null;
     inner = `<h3>${t(ws ? 'work_edit_title' : 'work_day_title')}</h3><form data-submit="saveWork"><input type="hidden" id="m_edit" value="${esc(ws ? ws.id : '')}">${dateField(ws ? ws.date : (m.date || today))}<p class="muted small">${t('work_day_hint')}</p>${field(t('hours'), `<input id="m_hours" inputmode="decimal" data-af placeholder="${esc(t('hours_ph'))}" autocomplete="off" value="${esc(ws ? String(ws.hours).replace('.', ',') : '')}">`)}${footBtns()}</form>`;
@@ -1887,12 +1889,32 @@ const actions = {
     if (!entered) return toast(t('err_amount'), true);
     const amount = Math.min(entered, debt.balance);
     const date = readDate('m_date');
+    // Денег в корзине «Долги» не хватает (доход не вписан или забыт): спрашиваем, откуда деньги, и записываем их как доход
+    const st = C.basketStats(S(), date).debts;
+    const short = C.round2(amount - Math.max(0, C.round2(st.allocated - st.spent)));
+    if (short > 0.004) { openModal('paySrc', { debtId: debt.id, amount, date, short }); return; }
+    this.finishPay(debt.id, amount, date, null);
+  },
+  savePaySrc() {
+    const m = ui.modal;
+    const source = val('m_source').trim().slice(0, 60);
+    if (!m || m.type !== 'paySrc') return;
+    if (!source) return toast(t('pay_src_need'), true);
+    this.finishPay(m.debtId, m.amount, m.date, { source, short: m.short });
+  },
+  finishPay(debtId, amount, date, inc) {
+    const debt = S().debts.find((d) => d.id === debtId);
+    if (!debt) return;
     store.update((s) => {
-      const d = s.debts.find((x) => x.id === debt.id);
+      const d = s.debts.find((x) => x.id === debtId);
+      if (inc) {
+        const alloc = Object.fromEntries(C.BASKETS.map((k) => [k, k === 'debts' ? inc.short : 0]));
+        s.incomes.push({ id: uid(), ts: Date.now(), date, amount: inc.short, source: inc.source, alloc, done: { debts: true } });
+      }
       d.balance = C.round2(d.balance - amount);
       s.payments.push({ id: uid(), ts: Date.now(), date, debtId: d.id, amount });
     });
-    const closed = debt.balance <= 0.004;
+    const closed = C.round2(debt.balance - amount) <= 0.004;
     if (closed) { ui.anim = { type: 'salute', at: Date.now() }; snd.play('levelup'); }
     ui.modal = null; ui.screen = closed ? 'today' : ui.screen; render(); toast(t('toast_saved'));
     if (closed) gnomeSay([{ type: 'gardener', text: t('gn_debt_closed', { d: debt.name }), ms: 6500 }]);
