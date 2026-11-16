@@ -352,3 +352,9 @@ button, a, label, select, input, summary, [data-act], .btn, .opt, .day, .treeSvg
 .dgoal { margin-top: 12px; padding-top: 10px; border-top: 1px solid rgba(255,255,255,.12); }
 .dgoal h4 { margin: 0 0 6px; font-size: 15px; }
 .dgoal p { margin: 6px 0 0; }
+
+/* окно «Что нового» */
+.news { margin: 6px 0 12px; }
+.news h4 { margin: 0 0 6px; font-size: 15px; }
+.news ul { margin: 0; padding-left: 20px; }
+.news li { margin: 0 0 7px; line-height: 1.4; }

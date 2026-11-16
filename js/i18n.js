@@ -1,6 +1,6 @@
 // Все тексты интерфейса в одном месте: русский, английский, польский, испанский.
 // Тексты входа и аккаунта лежат в js/authtext.js и добавляются к словарю ниже.
-import { AUTH_T } from './authtext.js?v=0.9.6';
+import { AUTH_T } from './authtext.js?v=0.9.7';
 export const LANGS = ['ru', 'en', 'pl', 'es'];
 export const LANG_NAMES = { ru: 'Русский', en: 'English', pl: 'Polski', es: 'Español' };
 
@@ -155,6 +155,7 @@ const D = {
     ty_etf: 'Фонд (ETF)', ty_stock: 'Акции', ty_crypto: 'Крипта', ty_deposit: 'Вклад, облигации', ty_skills: 'Навыки и учёба', ty_business: 'Свой бизнес', ty_other: 'Другое',
     inv_amount: 'Сколько вложил', inv_rate: 'Ожидаемый процент в год', inv_rate_hint: 'Для акций и крипты процент не гарантирован: впиши ожидание или 0 и обновляй стоимость вручную.',
     inv_from_basket: 'Взять из корзины «Инвестиции»', inv_invested: 'Вложено', inv_value: 'Сейчас стоит', inv_growth: 'Рост', inv_networth: 'Чистый капитал', inv_networth_hint: 'Все горшки + вложения + мне должны − долги',
+    news_title: 'Что нового', news_ver: 'Версия {v}', news_older: 'Раньше', news_ok: 'Понятно', news_btn: 'Что нового в приложении',
     cap_wait: 'Зарплата за этот месяц ещё не пришла (ждём около {a}). В капитале её нет.',
     pay_soon: 'Зарплата ждётся {date}: через {n} дн.', pay_today: 'Сегодня обычно приходит зарплата. Пришла? Внеси доход, и я разложу её по горшкам.', pay_late: 'Зарплата задерживается на {n} дн. (ждали {date}). Пришла? Внеси доход.', pay_done: 'Следующая зарплата около {date}, через {n} дн.', pay_add: 'Внести доход',
     dg_title: 'Цель: закрыть долги', dg_line: 'Погашено {p} из {i}', dg_eta: 'При таком темпе долги закроются примерно через {n} мес. ({m})', dg_nopace: 'Сделай первый платёж, и я покажу, когда ты закроешь долги.', dg_done: 'Долгов нет. Ты это сделал!', dg_tip: 'Подушки хватает на {n} мес. Долг обычно дороже накоплений: лишнее лучше направить в долг.',
@@ -336,6 +337,7 @@ const D = {
     ty_etf: 'Fund (ETF)', ty_stock: 'Stocks', ty_crypto: 'Crypto', ty_deposit: 'Deposit, bonds', ty_skills: 'Skills and study', ty_business: 'Own business', ty_other: 'Other',
     inv_amount: 'Amount invested', inv_rate: 'Expected % per year', inv_rate_hint: 'Stock and crypto returns are not guaranteed: enter your expectation or 0 and update the value by hand.',
     inv_from_basket: 'Take from the Investments basket', inv_invested: 'Invested', inv_value: 'Worth now', inv_growth: 'Growth', inv_networth: 'Net worth', inv_networth_hint: 'All jars + investments + owed to me − debts',
+    news_title: 'What\'s new', news_ver: 'Version {v}', news_older: 'Earlier', news_ok: 'Got it', news_btn: 'What\'s new in the app',
     cap_wait: 'This month\'s salary has not arrived yet (expecting about {a}). It is not in the total.',
     pay_soon: 'Salary expected {date}: in {n} days', pay_today: 'Salary usually arrives today. Did it come? Add the income and I will split it into jars.', pay_late: 'Salary is {n} days late (expected {date}). Did it come? Add the income.', pay_done: 'Next salary around {date}, in {n} days', pay_add: 'Add income',
     dg_title: 'Goal: pay off debts', dg_line: 'Paid {p} of {i}', dg_eta: 'At this pace your debts will be gone in about {n} months ({m})', dg_nopace: 'Make your first payment and I will show when you will be debt-free.', dg_done: 'No debts left. You did it!', dg_tip: 'Your cushion covers {n} months. Debt usually costs more than savings earn: send the extra to your debt.',
@@ -517,6 +519,7 @@ const D = {
     ty_etf: 'Fundusz (ETF)', ty_stock: 'Akcje', ty_crypto: 'Krypto', ty_deposit: 'Lokata, obligacje', ty_skills: 'Umiejętności i nauka', ty_business: 'Własny biznes', ty_other: 'Inne',
     inv_amount: 'Ile zainwestowałeś', inv_rate: 'Oczekiwane % rocznie', inv_rate_hint: 'Zyski z akcji i krypto nie są gwarantowane: wpisz oczekiwanie lub 0 i aktualizuj wartość ręcznie.',
     inv_from_basket: 'Weź z koszyka Inwestycje', inv_invested: 'Zainwestowano', inv_value: 'Teraz warte', inv_growth: 'Wzrost', inv_networth: 'Wartość netto', inv_networth_hint: 'Wszystkie słoiki + inwestycje + należności − długi',
+    news_title: 'Co nowego', news_ver: 'Wersja {v}', news_older: 'Wcześniej', news_ok: 'Jasne', news_btn: 'Co nowego w aplikacji',
     cap_wait: 'Wypłata za ten miesiąc jeszcze nie wpłynęła (oczekujemy około {a}). Nie ma jej w kapitale.',
     pay_soon: 'Wypłata spodziewana {date}: za {n} dni', pay_today: 'Dziś zwykle przychodzi wypłata. Wpłynęła? Dodaj przychód, a podzielę ją na słoiki.', pay_late: 'Wypłata spóźnia się o {n} dni (czekaliśmy na {date}). Wpłynęła? Dodaj przychód.', pay_done: 'Następna wypłata około {date}, za {n} dni', pay_add: 'Dodaj przychód',
     dg_title: 'Cel: spłacić długi', dg_line: 'Spłacono {p} z {i}', dg_eta: 'W tym tempie długi znikną za około {n} mies. ({m})', dg_nopace: 'Zrób pierwszą spłatę, a pokażę, kiedy będziesz bez długów.', dg_done: 'Nie ma już długów. Udało się!', dg_tip: 'Poduszki starcza na {n} mies. Dług zwykle kosztuje więcej niż oszczędności zarabiają: nadwyżkę lepiej przeznaczyć na dług.',
@@ -698,6 +701,7 @@ const D = {
     ty_etf: 'Fondo (ETF)', ty_stock: 'Acciones', ty_crypto: 'Cripto', ty_deposit: 'Depósito, bonos', ty_skills: 'Habilidades y estudio', ty_business: 'Negocio propio', ty_other: 'Otro',
     inv_amount: 'Cuánto invertiste', inv_rate: '% anual esperado', inv_rate_hint: 'El rendimiento de acciones y cripto no está garantizado: pon tu expectativa o 0 y actualiza el valor a mano.',
     inv_from_basket: 'Tomar de la cesta Inversiones', inv_invested: 'Invertido', inv_value: 'Vale ahora', inv_growth: 'Crecimiento', inv_networth: 'Patrimonio neto', inv_networth_hint: 'Todos los tarros + inversiones + me deben − deudas',
+    news_title: 'Novedades', news_ver: 'Versión {v}', news_older: 'Antes', news_ok: 'Entendido', news_btn: 'Novedades de la app',
     cap_wait: 'El sueldo de este mes aún no ha llegado (esperamos unos {a}). No está en el total.',
     pay_soon: 'Sueldo previsto el {date}: en {n} días', pay_today: 'Hoy suele llegar el sueldo. ¿Llegó? Añade el ingreso y lo reparto en los tarros.', pay_late: 'El sueldo lleva {n} días de retraso (esperábamos el {date}). ¿Llegó? Añade el ingreso.', pay_done: 'Próximo sueldo hacia el {date}, en {n} días', pay_add: 'Añadir ingreso',
     dg_title: 'Meta: liquidar las deudas', dg_line: 'Pagado {p} de {i}', dg_eta: 'A este ritmo las deudas se acabarán en unos {n} meses ({m})', dg_nopace: 'Haz el primer pago y te enseño cuándo te quedarás sin deudas.', dg_done: 'No quedan deudas. ¡Lo lograste!', dg_tip: 'El colchón cubre {n} meses. La deuda suele costar más de lo que rinde el ahorro: lo que sobre, mejor a la deuda.',

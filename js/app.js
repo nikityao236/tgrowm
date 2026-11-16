@@ -1,15 +1,16 @@
 // TGM — To Grow Money. Экраны и действия.
-import { t, setLang, getLang, LANGS, LANG_NAMES } from './i18n.js?v=0.9.6';
-import { store } from './store.js?v=0.9.6';
-import * as C from './calc.js?v=0.9.6';
-import { snd } from './sound.js?v=0.9.6';
-import * as P from './prices.js?v=0.9.6';
-import { LIBRARY } from './library.js?v=0.9.6';
-import { LEARN } from './learn.js?v=0.9.6';
-import * as A from './auth.js?v=0.9.6';
-import { REQUIRE_ACCOUNT, AUTH_DOMAIN, SITE_URL, VAPID_PUBLIC } from '../config.js?v=0.9.6';
-import { pushInfo, pushSubscribe, pushUnsubscribe } from './push.js?v=0.9.6';
-import { TOUR_STEPS, tipPosition } from './tour.js?v=0.9.6';
+import { t, setLang, getLang, LANGS, LANG_NAMES } from './i18n.js?v=0.9.7';
+import { store } from './store.js?v=0.9.7';
+import * as C from './calc.js?v=0.9.7';
+import { snd } from './sound.js?v=0.9.7';
+import * as P from './prices.js?v=0.9.7';
+import { LIBRARY } from './library.js?v=0.9.7';
+import { LEARN } from './learn.js?v=0.9.7';
+import * as A from './auth.js?v=0.9.7';
+import { REQUIRE_ACCOUNT, AUTH_DOMAIN, SITE_URL, VAPID_PUBLIC } from '../config.js?v=0.9.7';
+import { pushInfo, pushSubscribe, pushUnsubscribe } from './push.js?v=0.9.7';
+import { newsFor } from './changelog.js?v=0.9.7';
+import { TOUR_STEPS, tipPosition } from './tour.js?v=0.9.7';
 
 const CURRENCIES = ['USD', 'BYN', 'RUB', 'PLN', 'UAH', 'EUR'];
 const LOCALE = { ru: 'ru-RU', en: 'en-US', pl: 'pl-PL', es: 'es-ES' };
@@ -17,7 +18,8 @@ const CATS = ['food', 'home', 'utilities', 'transport', 'comm', 'health', 'fun',
 const NEED_CATS = new Set(['food', 'home', 'utilities', 'transport', 'comm', 'health']);
 const STEPS = ['lang', 'cur', 'auth', 'income', 'debts', 'cushion', 'needs', 'food', 'fun', 'waste', 'mode', 'plan'];
 const OB = 'tgm_ob';
-const APP_VERSION = '0.9.6 (этап 3, зарплата, долги, уведомления)';
+const APP_VERSION = '0.9.7 (этап 3, что нового)';
+const APP_VER = APP_VERSION.split(' ')[0];
 const ui = { screen: 'today', modal: null, step: 0, draft: null, cal: { month: null, sel: null }, acc: { tab: 'signup' }, fg: {}, rc: {}, busy: false, afterAuth: false };
 const $app = document.getElementById('app');
 const S = () => store.state;
@@ -514,8 +516,28 @@ function tipText() {
   if (lim.over) return t('gn_hello_over');
   return t('gn_hello_ok', { n: money(lim.left) });
 }
+// «Что нового»: какую версию человек уже видел на этом телефоне
+const SEEN_KEY = 'tgm_seen_ver';
+const getSeen = () => { try { return localStorage.getItem(SEEN_KEY) || ''; } catch { return ''; } };
+const setSeen = (v) => { try { localStorage.setItem(SEEN_KEY, v); } catch { /* без памяти покажем снова, это не страшно */ } };
+// Показывает окно после обновления. Новичку не показываем: он только что всё увидел сам (см. finishOnboarding)
+function maybeNews() {
+  if (ui.modal || ui.tour || ui.afterAuth || ui.screen === 'onboarding' || !S().profile.onboarded || S().profile.tourDone === false) return false;
+  if (getSeen() === APP_VER) return false;
+  ui.modal = { type: 'whatsnew', seen: getSeen() };
+  render();
+  return true;
+}
+function newsBody(seen) {
+  const lang = S().profile.lang;
+  const { shown, older } = newsFor(seen);
+  const block = (e) => `<div class="news"><h4><b>${t('news_ver', { v: e.v })}</b> <span class="muted small">${esc(longDate(e.date))}</span></h4><ul>${(e.items[lang] || e.items.en || e.items.ru).map((x) => `<li>${esc(x)}</li>`).join('')}</ul></div>`;
+  return `<h3>${t('news_title')}</h3>${shown.map(block).join('')}${older.length ? `<details><summary>${t('news_older')}</summary>${older.map(block).join('')}</details>` : ''}<div class="foot"><span></span><button class="btn primary" data-act="closeModal">${t('news_ok')}</button></div>`;
+}
+
 function greetToday() {
   if (!S().profile.onboarded || ui.screen === 'onboarding' || ui.tour) return;
+  if (maybeNews()) return; // сначала рассказываем про обновление; приветствие гнома придёт после закрытия окна
   const today = C.ymd();
   if (S().gnome.greeted === today) return;
   const offer = teacherOffer(today);
@@ -1235,7 +1257,7 @@ function vMore() {
   try { zones = Intl.supportedValuesOf('timeZone'); } catch { zones = []; }
   if (!zones.includes(p.tz)) zones = [p.tz, ...zones];
   return `<h2 class="h">${t('set_title')}</h2>
-<section class="card"><button class="btn primary" data-act="meetGnomes">${t('set_meet')}</button><button class="btn" data-act="goInvest">${t('invest_title')} →</button><button class="btn ghost" data-act="openPilot">${t('pilot_btn')}</button><button class="btn ghost" data-act="openWeek">${t('wk_title')}</button><button class="btn ghost" data-act="openTeacher">${t('tch_btn')}</button><button class="btn" data-act="nav" data-v="goals">${t('goals_title')} →</button><button class="btn" data-act="nav" data-v="reminders">${t('rem_title')} →</button><button class="btn" data-act="openMarket">${t('mkt_title')} →</button><button class="btn" data-act="openLearn">${t('learn_title')} →</button><button class="btn ghost" data-act="startTour">${t('tour_replay')}</button></section>
+<section class="card"><button class="btn primary" data-act="meetGnomes">${t('set_meet')}</button><button class="btn" data-act="goInvest">${t('invest_title')} →</button><button class="btn ghost" data-act="openPilot">${t('pilot_btn')}</button><button class="btn ghost" data-act="openWeek">${t('wk_title')}</button><button class="btn ghost" data-act="openTeacher">${t('tch_btn')}</button><button class="btn" data-act="nav" data-v="goals">${t('goals_title')} →</button><button class="btn" data-act="nav" data-v="reminders">${t('rem_title')} →</button><button class="btn" data-act="openMarket">${t('mkt_title')} →</button><button class="btn" data-act="openLearn">${t('learn_title')} →</button><button class="btn ghost" data-act="startTour">${t('tour_replay')}</button><button class="btn ghost" data-act="openNews">${t('news_btn')}</button></section>
 ${budgetCard()}
 <section class="card">${field(t('set_lang'), sel('s_lang', 'setLangS', LANGS.map((l) => [l, LANG_NAMES[l]]), p.lang))}
 ${field(t('set_cur'), sel('s_cur', 'setCur', CURRENCIES.map((x) => [x, x]), p.currency))}
@@ -1388,6 +1410,8 @@ ${field(t('inv_amount'), '<input id="m_amount" inputmode="decimal" autocomplete=
     if (!C.BASKETS.includes(m.k)) { ui.modal = null; return ''; }
     const pc = C.plan(S(), today);
     inner = `<h3>${BNAME(m.k)} <small class="muted">${C.roundedPercents(pc)[m.k]}%</small></h3><p>${t('help_' + m.k)}</p><div class="foot"><span></span><button class="btn primary" data-act="closeModal">${t('close')}</button></div>`;
+  } else if (m.type === 'whatsnew') {
+    inner = newsBody(m.seen);
   } else if (m.type === 'closing') {
     const rule = S().profile.rolloverRule || 'split';
     const rows = m.list.map((r) => `<div class="cl"><b>${esc(dfmt(r.month + '-01', { month: 'long', year: 'numeric' }))}</b>${kv(t('close_joy'), money(r.joyLeft))}${kv(t('close_kept'), money(r.keep))}${kv(t('close_needs'), money(r.needsLeft))}${kv(t('close_moved', { b: BNAME(r.basket) }), money(r.moved), 'good')}</div>`).join('');
@@ -1453,6 +1477,7 @@ const closeModal = () => {
   if (ui.modal && ui.modal.block) return; // обязательные окна (код восстановления, новый пароль) закрываются только по делу
   const m = ui.modal;
   ui.modal = null;
+  if (m && m.type === 'whatsnew') { setSeen(APP_VER); render(); setTimeout(greetToday, 250); return; }
   if (m && m.type === 'incomeDone') {
     // Доход разнесён по корзинам: гномы несут удобрение к дереву
     ui.screen = 'today'; ui.anim = { type: 'fertilize', at: Date.now() };
@@ -1462,6 +1487,7 @@ const closeModal = () => {
     return;
   }
   render();
+  setTimeout(() => { if (!ui.modal && !ui.tour) maybeNews(); }, 400); // окно «Что нового» ждало, пока закроется другое окно
 };
 
 // ---------- обучение: подсвечивает кнопки по одной и объясняет, за что каждая отвечает ----------
@@ -1566,6 +1592,7 @@ function finishOnboarding() {
   });
   setLang(S().profile.lang); applyTz();
   try { localStorage.removeItem(OB); } catch { /* ignore */ }
+  setSeen(APP_VER); // новичку «Что нового» не нужно
   ui.screen = 'today';
   render();
   if (gateOn()) return; // сначала аккаунт: обучение начнётся сразу после входа (proceedAfterAuth)
@@ -2163,6 +2190,7 @@ const actions = {
     ui.modal = { type: 'teacher', id: p ? p.item.id : null }; render();
   },
   startTour() { startTour(); },
+  openNews() { ui.modal = { type: 'whatsnew', seen: '' }; render(); },
   // рынок
   openMarket() { ui.screen = 'market'; mk.q = ''; render(); window.scrollTo(0, 0); mkOpenLoad(); },
   openLearn() { ui.learnFrom = ui.screen === 'market' ? 'market' : 'more'; ui.screen = 'learn'; render(); window.scrollTo(0, 0); },
