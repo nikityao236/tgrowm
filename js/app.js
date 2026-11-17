@@ -1,16 +1,16 @@
 // TGM — To Grow Money. Экраны и действия.
-import { t, setLang, getLang, LANGS, LANG_NAMES } from './i18n.js?v=0.9.7';
-import { store } from './store.js?v=0.9.7';
-import * as C from './calc.js?v=0.9.7';
-import { snd } from './sound.js?v=0.9.7';
-import * as P from './prices.js?v=0.9.7';
-import { LIBRARY } from './library.js?v=0.9.7';
-import { LEARN } from './learn.js?v=0.9.7';
-import * as A from './auth.js?v=0.9.7';
-import { REQUIRE_ACCOUNT, AUTH_DOMAIN, SITE_URL, VAPID_PUBLIC } from '../config.js?v=0.9.7';
-import { pushInfo, pushSubscribe, pushUnsubscribe } from './push.js?v=0.9.7';
-import { newsFor } from './changelog.js?v=0.9.7';
-import { TOUR_STEPS, tipPosition } from './tour.js?v=0.9.7';
+import { t, setLang, getLang, LANGS, LANG_NAMES } from './i18n.js?v=0.9.10';
+import { store } from './store.js?v=0.9.10';
+import * as C from './calc.js?v=0.9.10';
+import { snd } from './sound.js?v=0.9.10';
+import * as P from './prices.js?v=0.9.10';
+import { LIBRARY } from './library.js?v=0.9.10';
+import { LEARN } from './learn.js?v=0.9.10';
+import * as A from './auth.js?v=0.9.10';
+import { REQUIRE_ACCOUNT, AUTH_DOMAIN, SITE_URL, VAPID_PUBLIC } from '../config.js?v=0.9.10';
+import { pushInfo, pushSubscribe, pushUnsubscribe } from './push.js?v=0.9.10';
+import { newsFor, cmpVersion } from './changelog.js?v=0.9.10';
+import { TOUR_STEPS, tipPosition } from './tour.js?v=0.9.10';
 
 const CURRENCIES = ['USD', 'BYN', 'RUB', 'PLN', 'UAH', 'EUR'];
 const LOCALE = { ru: 'ru-RU', en: 'en-US', pl: 'pl-PL', es: 'es-ES' };
@@ -18,7 +18,7 @@ const CATS = ['food', 'home', 'utilities', 'transport', 'comm', 'health', 'fun',
 const NEED_CATS = new Set(['food', 'home', 'utilities', 'transport', 'comm', 'health']);
 const STEPS = ['lang', 'cur', 'auth', 'income', 'debts', 'cushion', 'needs', 'food', 'fun', 'waste', 'mode', 'plan'];
 const OB = 'tgm_ob';
-const APP_VERSION = '0.9.7 (этап 3, что нового)';
+const APP_VERSION = '0.9.10 (этап 3, автообновление)';
 const APP_VER = APP_VERSION.split(' ')[0];
 const ui = { screen: 'today', modal: null, step: 0, draft: null, cal: { month: null, sel: null }, acc: { tab: 'signup' }, fg: {}, rc: {}, busy: false, afterAuth: false };
 const $app = document.getElementById('app');
@@ -535,6 +535,28 @@ function newsBody(seen) {
   return `<h3>${t('news_title')}</h3>${shown.map(block).join('')}${older.length ? `<details><summary>${t('news_older')}</summary>${older.map(block).join('')}</details>` : ''}<div class="foot"><span></span><button class="btn primary" data-act="closeModal">${t('news_ok')}</button></div>`;
 }
 
+// Автообновление: сверяем версию на сайте с запущенной и, если вышла новее, перезапускаем приложение.
+// Если открыто окно или идёт обучение, ждём, пока человек закончит, чтобы не потерять то, что он вводит.
+let updating = false;
+async function checkUpdate(manual) {
+  if (updating || !/^https?:$/.test(location.protocol)) return;
+  try {
+    const r = await fetch('index.html?u=' + Date.now(), { cache: 'no-store' });
+    if (!r.ok) throw new Error('offline');
+    const m = /js\/app\.js\?v=([\d.]+)/.exec(await r.text());
+    if (!m || cmpVersion(m[1], APP_VER) <= 0) { if (manual) toast(t('upd_latest', { v: APP_VER })); return; }
+    if (ui.modal || ui.tour || ui.screen === 'onboarding') { if (manual) toast(t('upd_later'), true); return; }
+    let tried = '';
+    try { tried = sessionStorage.getItem('tgm_upd_try') || ''; } catch { /* без памяти обновимся один раз за запуск */ }
+    if (tried === m[1] && !manual) return; // не гоняем перезагрузку по кругу, если сайт отдаёт старое из кэша
+    try { sessionStorage.setItem('tgm_upd_try', m[1]); } catch { /* ignore */ }
+    updating = true;
+    toast(t('upd_now', { v: m[1] }));
+    try { const reg = await navigator.serviceWorker.getRegistration(); if (reg) await reg.update(); } catch { /* ничего */ }
+    setTimeout(() => location.reload(), 1300);
+  } catch { if (manual) toast(t('upd_offline'), true); }
+}
+
 function greetToday() {
   if (!S().profile.onboarded || ui.screen === 'onboarding' || ui.tour) return;
   if (maybeNews()) return; // сначала рассказываем про обновление; приветствие гнома придёт после закрытия окна
@@ -838,11 +860,18 @@ function debtGoalBlock() {
   return `<div class="dgoal"><h4>${t('dg_title')}</h4>${bar(g.progress, 'b-invest')}<p class="small">${t('dg_line', { p: money(g.paid), i: money(g.initial) })}</p><p class="muted small">${eta ? t('dg_eta', { n: g.monthsLeft, m: eta }) : t('dg_nopace')}</p>${cm != null && cm >= 1 ? `<p class="muted small">${t('dg_tip', { n: Math.floor(cm) })}</p>` : ''}</div>`;
 }
 
+// Деньги, которые пришли, но ещё не разложены по горшкам. Видны всегда, пока там что-то есть (или выбран ручной режим).
+function unallocCard() {
+  const pool = C.unallocTotal(S());
+  if (Math.abs(pool) < 0.005 && incomeAuto()) return '';
+  return `<section class="card unalloc ${pool > 0.004 ? 'hot' : ''}"><div class="between"><h3>${t('unalloc')}</h3><b class="${pool < -0.004 ? 'amber' : ''}">${money(pool)}</b></div><p class="muted small">${t(pool > 0.004 ? 'unalloc_hint' : 'unalloc_empty')}</p>${pool > 0.004 ? `<button class="btn primary" data-act="openAllocate">${t('unalloc_btn')}</button>` : ''}</section>`;
+}
+
 // Общий капитал: все горшки, плюс «мне должны», минус долги. Подробности по горшкам раскрываются по нажатию
 function capitalCard() {
   const cp = C.capital(S(), C.ymd());
   const pn = payNote();
-  const rows = C.BASKETS.map((k) => kv(BNAME(k), money(cp.jars[k]), cp.jars[k] < 0 ? 'amber' : '')).join('');
+  const rows = C.BASKETS.map((k) => kv(BNAME(k), money(cp.jars[k]), cp.jars[k] < 0 ? 'amber' : '')).join('') + (Math.abs(cp.jars.unalloc) >= 0.005 ? kv(t('unalloc'), money(cp.jars.unalloc), cp.jars.unalloc < 0 ? 'amber' : 'gold') : '');
   const extra = (cp.owedToMe > 0 ? kv(t('cap_owed'), '+' + money(cp.owedToMe), 'good') : '') + kv(t('cap_debts'), cp.debt > 0 ? '−' + money(cp.debt) : money(0), cp.debt > 0 ? 'amber' : '');
   return `<section class="card capital"><div class="label">${t('cap_title')}</div><div class="big ${cp.net < 0 ? 'amber' : ''}">${money(cp.net)}</div><div class="muted small">${t('cap_hint')}</div>${cp.waitIncome > 0 && !/paynote hot/.test(pn) ? `<p class="small amber">${t('cap_wait', { a: money(cp.waitIncome) })}</p>` : ''}${pn}
 <details><summary>${t('cap_jars')}</summary>${rows}${kv(t('cap_total'), money(cp.total), 'gold')}${extra}<p class="muted small">${t('cap_note')}</p></details>${debtGoalBlock()}</section>`;
@@ -852,7 +881,7 @@ function vToday() {
   const recent = allEntries().slice(0, 8).map(rowHtml).join('');
   return `${treeCard()}
 <div class="actions"><button class="btn primary" data-act="openExpense">− ${t('btn_expense')}</button><button class="btn" data-act="openIncome">+ ${t('btn_income')}</button><button class="btn ghost" data-act="noSpend">${t('btn_nospend')}</button></div>
-${capitalCard()}${weekCard(today)}${payCard(today)}${workCard()}${pilotCard(today)}${marketCard()}
+${unallocCard()}${capitalCard()}${weekCard(today)}${payCard(today)}${workCard()}${pilotCard(today)}${marketCard()}
 <section class="card"><h3>${t('recent')}</h3>${recent || `<p class="muted">${t('recent_empty')}</p>`}</section>`;
 }
 
@@ -912,7 +941,7 @@ function vBaskets() {
   const hist = closed.length
     ? `<section class="card"><h3>${t('hist_title')}</h3>${closed.map((c) => `<div class="cl"><b>${esc(dfmt(c.month + '-01', { month: 'long', year: 'numeric' }))}</b>${kv(t('close_kept'), money(c.keep))}${kv(t('close_moved', { b: BNAME(c.basket) }), money(c.moved), 'good')}</div>`).join('')}</section>`
     : '';
-  return `<h2 class="h">${t('baskets_title')}</h2>${cards}<section class="card">${kv(t('total_cushion'), money(C.cushionTotal(S())))}${kv(t('total_invest'), money(C.portfolioStats(S(), today).value))}${kv(t('total_debts'), money(C.debtTotal(S())))}${kv(t('inv_networth'), money(C.netWorth(S(), today)), 'gold')}</section>${purchasesCard()}${hist}`;
+  return `<h2 class="h">${t('baskets_title')}</h2>${unallocCard()}${cards}<section class="card">${kv(t('total_cushion'), money(C.cushionTotal(S())))}${kv(t('total_invest'), money(C.portfolioStats(S(), today).value))}${kv(t('total_debts'), money(C.debtTotal(S())))}${kv(t('inv_networth'), money(C.netWorth(S(), today)), 'gold')}</section>${purchasesCard()}${hist}`;
 }
 
 const monthsFmt = (n) => { try { return (Math.round(n * 10) / 10).toLocaleString(loc()); } catch { return String(Math.round(n * 10) / 10); } };
@@ -1262,6 +1291,7 @@ ${budgetCard()}
 <section class="card">${field(t('set_lang'), sel('s_lang', 'setLangS', LANGS.map((l) => [l, LANG_NAMES[l]]), p.lang))}
 ${field(t('set_cur'), sel('s_cur', 'setCur', CURRENCIES.map((x) => [x, x]), p.currency))}
 ${field(t('set_mode'), sel('s_mode', 'setModeS', C.MODES.map((m) => [m, t('mode_' + m)]), p.mode, left > 0))}${left > 0 ? `<p class="muted small">${t('set_mode_locked', { n: left })}</p>` : ''}
+${field(t('set_incmode'), sel('s_im', 'setIncomeMode', [['auto', t('im_auto')], ['manual', t('im_manual')]], p.incomeMode || 'auto'))}<p class="muted small">${t('set_incmode_hint')}</p>
 ${field(t('set_rollover'), sel('s_ro', 'setRollover', [['split', t('ro_split')], ['joy', t('ro_joy')], ['priority', t('ro_priority')]], p.rolloverRule || 'split'))}
 ${field(t('set_sound'), sel('s_snd', 'setSoundS', [['off', t('snd_off')], ['fx', t('snd_fx')], ['all', t('snd_all')]], p.sound || 'fx'))}
 ${field(t('set_grumpy'), sel('s_gr', 'setGrumpy', [['on', t('opt_on')], ['off', t('opt_off')]], p.grumpy === false ? 'off' : 'on'))}
@@ -1272,7 +1302,7 @@ ${kv(t('set_start'), esc(longDate(p.startDate || C.ymd())))}</section>
 ${pushCard()}
 <section class="card"><h3>${t('set_account')}</h3><p class="muted small">${syncText()}</p>${account}${legal}</section>
 <section class="card"><button class="btn" data-act="exportCsv">${t('set_export')}</button><button class="btn danger" data-act="wipe">${t('set_delete')}</button></section>
-<p class="muted small center">${t('set_version')}: ${APP_VERSION}</p>
+<p class="muted small center">${t('set_version')}: ${APP_VERSION}</p><p class="center"><button class="btn ghost" data-act="checkUpdateNow">${t('upd_check')}</button></p>
 <p class="warnbox">${t('risk')}</p>`;
 }
 
@@ -1302,6 +1332,43 @@ function vPilotBody() {
   return `<h3>${t('pilot_sum_title')}</h3><div class="pr head"><span></span><span>${t('pilot_est')}</span><span>${t('pilot_act')}</span></div>${rows}${food}${wants}
 ${!sm.hasData ? `<p class="muted small">${t('pilot_nodata')}</p>` : ''}${!sm.enough ? `<p class="muted small">${t('pilot_early', { n: sm.elapsed })}</p>` : ''}
 <div class="foot"><button class="btn ghost" data-act="closeModal">${t('close')}</button><button class="btn primary" data-act="applyPilot" ${canApply ? '' : 'disabled'}>${t('pilot_apply')}</button></div>`;
+}
+
+// Сколько можно потратить из горшка на оплату долга (для «Долгов» это то, что пришло в горшок и не выплачено)
+function payAvail(src, date) {
+  const st = C.basketStats(S(), date);
+  if (src === 'debts') return Math.max(0, C.round2(st.debts.allocated - st.debts.spent));
+  if (src === 'needs') return st.needs.left;
+  if (src === 'joy') return st.joy.left;
+  if (src === 'cushion') return C.cushionTotal(S());
+  if (src === 'invest') return C.investAvailable(S());
+  return C.unallocTotal(S());
+}
+function paySourceField(date) {
+  const opts = C.PAY_SOURCES.map((k) => [k, payAvail(k, date)]).filter(([k, a]) => k === 'debts' || a > 0.004);
+  const first = opts.find(([k, a]) => k === 'debts' && a > 0.004) || opts.find(([k, a]) => a > 0.004) || opts[0];
+  return field(t('pay_from'), `<select id="m_from">${opts.map(([k, a]) => `<option value="${k}" ${first && first[0] === k ? 'selected' : ''}>${esc(BNAME(k))} · ${esc(t('pay_from_have', { a: money(a) }))}</option>`).join('')}</select>`);
+}
+const incomeAuto = () => (S().profile.incomeMode || 'auto') === 'auto';
+// Окно «Куда пошёл доход»: галочка кладёт долю по плану в горшок, всё неотмеченное остаётся в «Не распределено»
+function incomeAssignBody(inc, pc, today, m) {
+  const A = inc.assigned || {};
+  const rest = C.round2(inc.amount - C.assignedSum(inc));
+  const rows = C.BASKETS.map((k) => `<label class="check"><input type="checkbox" data-change="toggleAssign" data-id="${esc(inc.id)}" data-b="${k}" ${inc.alloc[k] > 0 && (Number(A[k]) || 0) >= inc.alloc[k] - 0.004 ? 'checked' : ''} ${inc.alloc[k] > 0 ? '' : 'disabled'}><span>${BNAME(k)} · ${Math.round((inc.alloc[k] / (inc.amount || 1)) * 100)}%</span><b>${money(inc.alloc[k])}</b></label>`).join('');
+  const late = C.monthOf(inc.date) !== C.monthOf(today) ? `<p class="warnbox">${t('inc_past_warn')}</p><button class="btn primary" data-act="moveIncomeToday" data-id="${esc(inc.id)}">${t('inc_move_today')}</button>` : '';
+  return `<h3>${t('inc_got_title')}: ${money(inc.amount)}</h3>${m.note ? `<p class="warnbox">${esc(m.note)}</p>` : ''}${late}<p class="muted small">${t('inc_assign_hint')}</p>${rows}
+${C.fixedNeeds(S(), today) > 0 && !inc.alloc.needs ? `<p class="muted small">${t('needs_full')}</p>` : ''}${pc.noSurplus ? `<p class="warnbox">${t('plan_none')}</p>` : ''}
+<div class="kv unrest ${rest > 0.004 ? 'hot' : ''}"><span>${t('inc_assign_rest')}</span><b>${money(rest)}</b></div>
+<div class="foot wrap"><button class="btn" data-act="assignAllPlan" data-id="${esc(inc.id)}">${t('inc_plan_all')}</button><button class="btn" data-act="openAllocate">${t('inc_manual')}</button><button class="btn primary" data-act="closeModal">${t('close')}</button></div>`;
+}
+
+// Пока вводишь суммы в окне распределения, показываем, сколько ещё осталось в «Не распределено»
+function allocLive() {
+  const pool = C.unallocTotal(S());
+  const used = C.round2(C.BASKETS.reduce((a, k) => a + (C.parseNonNeg(val('al_' + k)) || 0), 0));
+  const left = C.round2(pool - used);
+  const el = document.getElementById('al_left');
+  if (el) el.innerHTML = `<span>${t('alloc_left')}</span><b class="${left < 0 ? 'amber' : ''}">${money(left)}</b>`;
 }
 
 function vModal() {
@@ -1385,14 +1452,21 @@ ${unpaid > 0 ? `<label class="check2"><input type="checkbox" id="m_paid" checked
     const inc = S().incomes.find((i) => i.id === m.id);
     if (!inc) { ui.modal = null; return ''; }
     const pc = C.plan(S(), today);
+    if (inc.assigned) { inner = incomeAssignBody(inc, pc, today, m); } else {
     inner = `<h3>${t('inc_done_title')}: ${money(inc.amount)}</h3>${m.note ? `<p class="warnbox">${esc(m.note)}</p>` : ''}${C.monthOf(inc.date) !== C.monthOf(today) ? `<p class="warnbox">${t('inc_past_warn')}</p><button class="btn primary" data-act="moveIncomeToday" data-id="${esc(inc.id)}">${t('inc_move_today')}</button>` : ''}<p class="muted small">${t('inc_check')}</p>
 ${C.BASKETS.map((k) => `<label class="check"><input type="checkbox" data-change="toggleDone" data-id="${esc(inc.id)}" data-b="${k}" ${inc.done && inc.done[k] ? 'checked' : ''}><span>${BNAME(k)} · ${Math.round((inc.alloc[k] / (inc.amount || 1)) * 100)}%</span><b>${money(inc.alloc[k])}</b></label>`).join('')}
 ${C.fixedNeeds(S(), today) > 0 && !inc.alloc.needs ? `<p class="muted small">${t('needs_full')}</p>` : ''}${pc.noSurplus ? `<p class="warnbox">${t('plan_none')}</p>` : ''}<div class="foot"><span></span><button class="btn primary" data-act="closeModal">${t('close')}</button></div>`;
+    }
+  } else if (m.type === 'allocate') {
+    const pool = C.unallocTotal(S());
+    const pc = C.plan(S(), today);
+    const rows = C.BASKETS.map((k) => `<label class="field"><span>${BNAME(k)} <small class="muted">${t('alloc_plan_hint', { a: money(Math.max(0, C.round2(pool * pc[k]))) })}</small></span><input id="al_${k}" data-live="alloc" inputmode="decimal" autocomplete="off" placeholder="0"></label>`).join('');
+    inner = `<h3>${t('alloc_title')}</h3><div class="kv"><span>${t('unalloc')}</span><b>${money(pool)}</b></div><p class="muted small">${t('alloc_hint')}</p><form data-submit="saveAllocate">${rows}<div class="kv unrest" id="al_left"><span>${t('alloc_left')}</span><b>${money(pool)}</b></div><div class="foot wrap"><button type="button" class="btn" data-act="allocFillPlan">${t('alloc_fill_plan')}</button><button type="button" class="btn ghost" data-act="closeModal">${t('cancel')}</button><button class="btn primary" type="submit">${t('alloc_save')}</button></div></form>`;
   } else if (m.type === 'debt') {
     inner = `<h3>${t('debt_title')}</h3><form data-submit="saveDebt">${debtFields('md_')}${footBtns()}</form>`;
   } else if (m.type === 'pay') {
     const open = S().debts.filter((d) => d.balance > 0).sort((a, b) => b.rate - a.rate);
-    inner = `<h3>${t('pay_title')}</h3><form data-submit="savePay">${field(t('pay_pick'), `<select id="m_debt">${open.map((d) => `<option value="${esc(d.id)}">${esc(d.name)} · ${esc(money(d.balance))}</option>`).join('')}</select>`)}${dateField(today)}${field(t('amount'), '<input id="m_amount" inputmode="decimal" data-af autocomplete="off">')}${footBtns()}</form>`;
+    inner = `<h3>${t('pay_title')}</h3><form data-submit="savePay">${field(t('pay_pick'), `<select id="m_debt">${open.map((d) => `<option value="${esc(d.id)}">${esc(d.name)} · ${esc(money(d.balance))}</option>`).join('')}</select>`)}${paySourceField(today)}${dateField(today)}${field(t('amount'), '<input id="m_amount" inputmode="decimal" data-af autocomplete="off">')}${footBtns()}</form>`;
   } else if (m.type === 'paySrc') {
     inner = `<h3>${t('pay_src_title')}</h3><p class="warnbox">${t('pay_src_hint', { n: money(m.short) })}</p><form data-submit="savePaySrc">${field(t('pay_src_label'), `<input id="m_source" data-af autocomplete="off" maxlength="60" placeholder="${esc(t('pay_src_ph'))}">`)}${footBtns()}</form>`;
   } else if (m.type === 'work') {
@@ -1414,7 +1488,7 @@ ${field(t('inv_amount'), '<input id="m_amount" inputmode="decimal" autocomplete=
     inner = newsBody(m.seen);
   } else if (m.type === 'closing') {
     const rule = S().profile.rolloverRule || 'split';
-    const rows = m.list.map((r) => `<div class="cl"><b>${esc(dfmt(r.month + '-01', { month: 'long', year: 'numeric' }))}</b>${kv(t('close_joy'), money(r.joyLeft))}${kv(t('close_kept'), money(r.keep))}${kv(t('close_needs'), money(r.needsLeft))}${kv(t('close_moved', { b: BNAME(r.basket) }), money(r.moved), 'good')}</div>`).join('');
+    const rows = m.list.map((r) => `<div class="cl"><b>${esc(dfmt(r.month + '-01', { month: 'long', year: 'numeric' }))}</b>${kv(t('close_joy'), money(r.joyLeft))}${kv(t('close_kept'), money(r.keep))}${kv(t('close_needs'), money(r.needsLeft))}${kv(t('close_moved', { b: BNAME(r.basket) }), money(r.moved), 'good')}${r.debtsLeft > 0 ? kv(t('close_debtskept'), money(r.debtsLeft)) : ''}${r.deficit > 0 ? kv(t('close_deficit'), '−' + money(r.deficit), 'amber') : ''}</div>`).join('');
     inner = `<h3>${t('close_title')}</h3>${rows}<p class="muted small">${t('set_rollover')}: ${t('ro_' + rule)}</p><div class="foot"><span></span><button class="btn primary" data-act="closeModal">${t('close_ok')}</button></div>`;
   } else if (m.type === 'live') {
     const h = S().holdings.find((x) => x.id === m.id);
@@ -1487,7 +1561,7 @@ const closeModal = () => {
     return;
   }
   render();
-  setTimeout(() => { if (!ui.modal && !ui.tour) maybeNews(); }, 400); // окно «Что нового» ждало, пока закроется другое окно
+  setTimeout(() => { if (!ui.modal && !ui.tour) { maybeNews(); checkUpdate(); } }, 400); // окно «Что нового» ждало, пока закроется другое окно
 };
 
 // ---------- обучение: подсвечивает кнопки по одной и объясняет, за что каждая отвечает ----------
@@ -1587,7 +1661,7 @@ function finishOnboarding() {
   const today = C.ymd();
   store.update((s) => {
     // tourDone: false = обучение обязательно: если закрыть приложение посреди него, при следующем запуске оно продолжится
-    s.profile = { ...s.profile, ...pr, onboarded: true, modeChangedAt: today, startDate: today, pilotApplied: false, tourDone: false };
+    s.profile = { ...s.profile, ...pr, onboarded: true, modeChangedAt: today, startDate: today, pilotApplied: false, tourDone: false, incomeMode: 'manual' };
     s.debts = debts;
   });
   setLang(S().profile.lang); applyTz();
@@ -1912,7 +1986,7 @@ const actions = {
           const rest = { ...S(), incomes: S().incomes.filter((x) => x.id !== editId) };
           alloc = C.allocateIncome(rest, amount, date, C.ymd());
         }
-        store.update((s) => { const x = s.incomes.find((y) => y.id === editId); if (x) { x.amount = amount; x.date = date; x.source = source; x.alloc = alloc; } });
+        store.update((s) => { const x = s.incomes.find((y) => y.id === editId); if (x) { x.amount = amount; x.date = date; x.source = source; if (alloc !== cur.alloc && x.assigned) x.assigned = incomeAuto() ? { ...alloc } : {}; x.alloc = alloc; } });
       }
       ui.modal = null; render(); toast(t('toast_saved'));
       return;
@@ -1927,7 +2001,7 @@ const actions = {
     const alloc = C.allocateIncome(S(), amount, date, C.ymd());
     const id = uid();
     store.update((s) => {
-      s.incomes.push({ id, ts: Date.now(), date, amount, source, alloc, done: {} });
+      s.incomes.push({ id, ts: Date.now(), date, amount, source, alloc, assigned: incomeAuto() ? { ...alloc } : {}, done: {} });
       if (markPaid) s.shifts.forEach((x) => { if (inScope(x)) x.paidBy = id; });
     });
     snd.play('whoosh');
@@ -1941,7 +2015,7 @@ const actions = {
     const today = C.ymd();
     const rest = { ...S(), incomes: S().incomes.filter((x) => x.id !== id) };
     const alloc = C.allocateIncome(rest, cur.amount, today, today);
-    store.update((s) => { const x = s.incomes.find((y) => y.id === id); if (x) { x.date = today; x.alloc = alloc; x.done = {}; } });
+    store.update((s) => { const x = s.incomes.find((y) => y.id === id); if (x) { x.date = today; x.alloc = alloc; x.done = {}; if (x.assigned) x.assigned = incomeAuto() ? { ...alloc } : {}; } });
     ui.modal = { type: 'incomeDone', id };
     render(); toast(t('inc_moved'));
   },
@@ -1961,6 +2035,13 @@ const actions = {
     if (!entered) return toast(t('err_amount'), true);
     const amount = Math.min(entered, debt.balance);
     const date = readDate('m_date');
+    const from = C.PAY_SOURCES.includes(val('m_from')) ? val('m_from') : 'debts';
+    if (from !== 'debts') {
+      const have = payAvail(from, date);
+      if (amount > have + 0.004) return toast(t('err_pay_short', { a: money(Math.max(0, have)) }), true);
+      this.finishPay(debt.id, amount, date, null, from);
+      return;
+    }
     // Денег в корзине «Долги» не хватает (доход не вписан или забыт): спрашиваем, откуда деньги, и записываем их как доход
     const st = C.basketStats(S(), date).debts;
     const short = C.round2(amount - Math.max(0, C.round2(st.allocated - st.spent)));
@@ -1974,7 +2055,7 @@ const actions = {
     if (!source) return toast(t('pay_src_need'), true);
     this.finishPay(m.debtId, m.amount, m.date, { source, short: m.short });
   },
-  finishPay(debtId, amount, date, inc) {
+  finishPay(debtId, amount, date, inc, source) {
     const debt = S().debts.find((d) => d.id === debtId);
     if (!debt) return;
     store.update((s) => {
@@ -1984,7 +2065,7 @@ const actions = {
         s.incomes.push({ id: uid(), ts: Date.now(), date, amount: inc.short, source: inc.source, alloc, done: { debts: true } });
       }
       d.balance = C.round2(d.balance - amount);
-      s.payments.push({ id: uid(), ts: Date.now(), date, debtId: d.id, amount });
+      s.payments.push({ id: uid(), ts: Date.now(), date, debtId: d.id, amount, ...(source && source !== 'debts' ? { source } : {}) });
     });
     const closed = C.round2(debt.balance - amount) <= 0.004;
     if (closed) { ui.anim = { type: 'salute', at: Date.now() }; snd.play('levelup'); }
@@ -2190,6 +2271,7 @@ const actions = {
     ui.modal = { type: 'teacher', id: p ? p.item.id : null }; render();
   },
   startTour() { startTour(); },
+  checkUpdateNow() { checkUpdate(true); },
   openNews() { ui.modal = { type: 'whatsnew', seen: '' }; render(); },
   // рынок
   openMarket() { ui.screen = 'market'; mk.q = ''; render(); window.scrollTo(0, 0); mkOpenLoad(); },
@@ -2368,6 +2450,34 @@ const actions = {
   setTheme(el) { store.update((s) => { s.theme = el.value === 'light' ? 'light' : 'dark'; }); applyTheme(); render(); },
   setTzS(el) { store.update((s) => { s.profile.tz = el.value; }); applyTz(); render(); },
   setRollover(el) { store.update((s) => { s.profile.rolloverRule = ['split', 'joy', 'priority'].includes(el.value) ? el.value : 'split'; }); render(); },
+  // ---- «Не распределено» ----
+  toggleAssign(el) {
+    store.update((s) => { const i = s.incomes.find((x) => x.id === el.dataset.id); if (i && i.assigned) i.assigned[el.dataset.b] = el.checked ? (Number(i.alloc[el.dataset.b]) || 0) : 0; });
+    render();
+  },
+  assignAllPlan(el) {
+    store.update((s) => { const i = s.incomes.find((x) => x.id === el.dataset.id); if (i && i.assigned) i.assigned = { ...i.alloc }; });
+    render();
+  },
+  openAllocate() { openModal('allocate'); },
+  allocFillPlan() {
+    const pool = C.unallocTotal(S());
+    const pc = C.plan(S(), C.ymd());
+    const parts = C.splitAmount(Math.max(0, pool), pc);
+    C.BASKETS.forEach((k) => { const el = document.getElementById('al_' + k); if (el) el.value = parts[k] > 0 ? String(parts[k]).replace('.', ',') : ''; });
+    allocLive();
+  },
+  saveAllocate() {
+    const parts = {};
+    C.BASKETS.forEach((k) => { const v = C.parseNonNeg(val('al_' + k)); if (v === null) parts.__bad = true; else parts[k] = v; });
+    if (parts.__bad) return toast(t('err_amount'), true);
+    const r = C.planAllocation(S(), parts, C.ymd());
+    if (r.error === 'empty') return toast(t('err_alloc_empty'), true);
+    if (r.error === 'too_much') return toast(t('err_alloc_much', { a: money(r.pool) }), true);
+    store.update((s) => { r.transfers.forEach((x) => s.transfers.push({ id: uid(), ts: Date.now(), ...x })); });
+    snd.play('coins'); ui.modal = null; render(); toast(t('toast_alloc'));
+  },
+  setIncomeMode(el) { store.update((s) => { s.profile.incomeMode = el.value === 'manual' ? 'manual' : 'auto'; }); render(); },
   setPayDay(el) { const n = Number(el.value); store.update((s) => { if (n >= 1 && n <= 31) s.profile.payDay = n; else delete s.profile.payDay; }); render(); },
   setPushPref(el) { const k = el.dataset.k; if (!PUSH_KINDS.includes(k)) return; store.update((s) => { s.profile.push = { ...(s.profile.push || {}), [k]: el.checked }; }); },
   async enablePush() {
@@ -2420,6 +2530,7 @@ document.addEventListener('change', (e) => {
 document.addEventListener('input', (e) => {
   const b = e.target.dataset && e.target.dataset.bind;
   if (b && ui.screen === 'onboarding') { setPath(ui.draft.profile, b, e.target.value); saveOb(); }
+  if (e.target.dataset && e.target.dataset.live === 'alloc') allocLive();
   if (e.target.id === 'mkt_q') { mk.q = e.target.value; mkList(); } // поиск по рынку: обновляем только список, чтобы не терять ввод
 });
 document.addEventListener('keydown', (e) => {
@@ -2444,6 +2555,7 @@ document.addEventListener('visibilitychange', () => {
   if (document.hidden) return;
   if (!ui.modal && !ui.tour) store.refresh(); // вернулись в приложение: подтягиваем правки с других устройств
   if (!ui.modal) checkClosings();
+  checkUpdate();
 });
 
 // ---------- запуск ----------
@@ -2477,12 +2589,13 @@ else {
 }
 loadAssets();
 setInterval(tickClock, 15000);
+setTimeout(checkUpdate, 2500); setInterval(checkUpdate, 20 * 60 * 1000);
 setInterval(tickTimer, 1000);
 store.init();
 // Сервис-воркер есть не везде (файл с телефона, закрытые просмотрщики): без него приложение работает так же
 try {
   if ('serviceWorker' in navigator) {
-    if (location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(() => {});
+    if (location.protocol === 'https:') navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).catch(() => {});
     else {
       // На своём компьютере и по Wi-Fi сервис-воркер не нужен: убираем старые, чтобы не показывались прошлые версии
       navigator.serviceWorker.getRegistrations().then((rs) => rs.forEach((r) => r.unregister())).catch(() => {});

@@ -2,6 +2,70 @@
 // Новые версии добавляй В НАЧАЛО списка. v: номер версии, date: ГГГГ-ММ-ДД, items: по языкам короткие пункты простыми словами.
 export const CHANGELOG = [
   {
+    v: '0.9.10', date: '2026-11-17',
+    items: {
+      ru: ['Автообновление: приложение само проверяет, вышла ли новая версия, и обновляется, когда ты его открываешь. Принудительно проверить можно в «Ещё», кнопка «Проверить обновления».'],
+      en: ['Auto-update: the app checks for a new version by itself and updates when you open it. You can check manually in "More", "Check for updates".'],
+      pl: ['Automatyczna aktualizacja: aplikacja sama sprawdza, czy jest nowa wersja, i aktualizuje się po otwarciu. Ręcznie sprawdzisz w „Więcej”, „Sprawdź aktualizacje”.'],
+      es: ['Actualización automática: la app busca sola una versión nueva y se actualiza al abrirla. Puedes comprobarlo a mano en «Más», «Buscar actualizaciones».'],
+    },
+  },  {
+    v: '0.9.9', date: '2026-11-17',
+    items: {
+      ru: [
+        'Новая корзина «Не распределено»: деньги, которые пришли, но ты ещё не решил, куда их положить, ждут там и видны в капитале. Ничего больше не теряется по дороге.',
+        'Новый доход: отметь галочкой, что куда пошло. Всё неотмеченное остаётся в «Не распределено». Кнопка «Всё по плану» ставит все галочки сразу.',
+        'Распределить вручную: сам выбираешь, в какой горшок и сколько. Само ничего не разложится.',
+        'Долг можно платить из любой корзины: при оплате выбери «Откуда платить».',
+        'В «Ещё», «Новый доход» можно выбрать, делить доход сразу по плану (как раньше) или оставлять в «Не распределено». У новых пользователей по умолчанию ручной режим.',
+      ],
+      en: [
+        'New jar "Unallocated": money that has arrived but that you have not assigned yet waits there and counts in your capital. Nothing gets lost on the way.',
+        'New income: tick where it goes. Whatever you leave unticked stays in "Unallocated". The "All by plan" button ticks everything at once.',
+        'Allocate manually: you choose which jar and how much. Nothing is split by itself.',
+        'You can pay a debt from any jar: choose "Pay from" when you make the payment.',
+        'In "More", "New income" you can choose to split income by plan right away (as before) or keep it in "Unallocated". New users start in manual mode.',
+      ],
+      pl: [
+        'Nowy słoik „Nierozdzielone”: pieniądze, które wpłynęły, ale jeszcze ich nie przypisałeś, czekają tam i liczą się w kapitale. Nic nie ginie po drodze.',
+        'Nowy przychód: zaznacz, dokąd trafia. Czego nie zaznaczysz, zostaje w „Nierozdzielone”. Przycisk „Wszystko wg planu” zaznacza wszystko naraz.',
+        'Rozdziel ręcznie: sam wybierasz słoik i kwotę. Nic nie dzieli się samo.',
+        'Dług możesz spłacić z dowolnego słoika: przy płatności wybierz „Skąd zapłacić”.',
+        'W „Więcej”, „Nowy przychód” wybierzesz, czy dzielić od razu wg planu (jak dotąd), czy zostawiać w „Nierozdzielone”. Nowi użytkownicy zaczynają w trybie ręcznym.',
+      ],
+      es: [
+        'Nuevo tarro «Sin asignar»: el dinero que ha llegado y que aún no asignaste espera allí y cuenta en tu capital. Nada se pierde por el camino.',
+        'Ingreso nuevo: marca adónde va. Lo que no marques se queda en «Sin asignar». El botón «Todo según el plan» marca todo de golpe.',
+        'Repartir a mano: tú eliges el tarro y la cantidad. Nada se reparte solo.',
+        'Puedes pagar una deuda desde cualquier tarro: al pagar elige «Pagar desde».',
+        'En «Más», «Ingreso nuevo» puedes elegir repartir al instante según el plan (como antes) o dejarlo en «Sin asignar». Los usuarios nuevos empiezan en modo manual.',
+      ],
+    },
+  },  {
+    v: '0.9.8', date: '2026-11-16',
+    items: {
+      ru: [
+        'Забыл внести зарплату или трату? Внеси позже, с нужной датой: закрытые месяцы пересчитаются сами, и деньги не потеряются.',
+        'Закрытие месяца стало честнее: остаток «Долгов» не пропадает, перерасход переносится на следующий месяц, а деньги по плану, которых не было, больше не переносятся.',
+        'В окне закрытия месяца видно, сколько отложено на долги и сколько перерасхода перенесено.',
+      ],
+      en: [
+        'Forgot to log a salary or an expense? Add it later with the right date: closed months recalculate by themselves and no money gets lost.',
+        'Month closing is more honest: leftover Debts money no longer disappears, overspending carries into the next month, and planned money that never arrived is no longer carried over.',
+        'The month-closing window now shows how much was set aside for debts and how much overspending was carried.',
+      ],
+      pl: [
+        'Zapomniałeś wpisać wypłatę lub wydatek? Dodaj później z właściwą datą: zamknięte miesiące przeliczą się same i pieniądze nie zginą.',
+        'Zamykanie miesiąca jest uczciwsze: reszta w „Długach” nie znika, przekroczenie przechodzi na następny miesiąc, a planowane pieniądze, które nie wpłynęły, nie są już przenoszone.',
+        'W oknie zamknięcia miesiąca widać, ile odłożono na długi i ile przekroczenia przeniesiono.',
+      ],
+      es: [
+        '¿Olvidaste anotar un sueldo o un gasto? Añádelo después con la fecha correcta: los meses cerrados se recalculan solos y no se pierde dinero.',
+        'El cierre de mes es más honesto: lo que sobra en Deudas ya no desaparece, el gasto de más pasa al mes siguiente y el dinero previsto que nunca llegó ya no se traslada.',
+        'La ventana de cierre muestra cuánto se reservó para deudas y cuánto gasto de más se trasladó.',
+      ],
+    },
+  },  {
     v: '0.9.7', date: '2026-11-16',
     items: {
       ru: ['Окно «Что нового»: после обновления приложение само расскажет, что изменилось. Открыть его снова можно в «Ещё».'],

@@ -204,14 +204,39 @@ export function splitAmount(amount, pcts) {
   return out;
 }
 
+// «Не распределено»: деньги пришли, но человек ещё не решил, в какие горшки их положить. Это не горшок плана, а общий пул.
+export const UNALLOC = 'unalloc';
+// Откуда можно платить долг: любой горшок или пул «Не распределено» (по умолчанию «Долги»)
+export const PAY_SOURCES = ['debts', 'needs', 'cushion', 'invest', 'joy', UNALLOC];
+// Сколько дохода реально разложено по горшкам. У старых записей (до версии 0.9.9) разложено всё: берём alloc.
+export const assignedOf = (i) => i.assigned || i.alloc || {};
+export const assignedSum = (i) => round2(sum(BASKETS, (k) => Number(assignedOf(i)[k]) || 0));
+const payFromSum = (state, src, m = null) => sum((state.payments || []).filter((x) => (x.source || 'debts') === src && (m == null || monthOf(x.date) === m)), (x) => x.amount);
+export const payFrom = (state, src, m = null) => round2(payFromSum(state, src, m));
+// Сколько лежит в «Не распределено»: пришло минус разложено минус отдано на долги из этого пула
+export function unallocTotal(state) {
+  // У старых записей (без поля assigned) разложено всё по определению, у новых считаем остаток
+  const pool = sum(state.incomes, (i) => (i.assigned ? (Number(i.amount) || 0) - assignedSum(i) : 0));
+  const moved = sum((state.transfers || []).filter((x) => x.from === UNALLOC), (x) => x.amount);
+  return round2(pool - moved - payFromSum(state, UNALLOC));
+}
+// Раскладывает сумму из «Не распределено» по горшкам: parts = { needs: 100, joy: 50 }. Возвращает записи переносов (без запуска store).
+export function planAllocation(state, parts, date = ymd()) {
+  const items = BASKETS.map((k) => [k, round2(Number(parts[k]) || 0)]).filter(([, v]) => v > 0);
+  const total = round2(sum(items, ([, v]) => v));
+  if (!items.length) return { error: 'empty' };
+  if (total > unallocTotal(state) + 0.004) return { error: 'too_much', total, pool: unallocTotal(state) };
+  return { total, transfers: items.map(([k, v]) => ({ from: UNALLOC, to: k, amount: v, date })) };
+}
+
 // Крупные покупки (машина, ремонт, техника): разовая трата из подушки или из корзины инвестиций, не входит в нужды и месячный план
 export const PURCHASE_SOURCES = ['cushion', 'invest'];
 export const purchaseTotal = (state, src) => round2(sum((state.purchases || []).filter((x) => x.source === src), (x) => x.amount));
 export function cushionTotal(state) {
-  return round2((Number(state.profile.cushion) || 0) + sum(state.incomes, (i) => i.alloc && i.alloc.cushion) + sum((state.transfers || []).filter((x) => x.to === 'cushion'), (x) => x.amount) - purchaseTotal(state, 'cushion') - loanOut(state, 'cushion'));
+  return round2((Number(state.profile.cushion) || 0) + sum(state.incomes, (i) => assignedOf(i).cushion) + sum((state.transfers || []).filter((x) => x.to === 'cushion'), (x) => x.amount) - purchaseTotal(state, 'cushion') - loanOut(state, 'cushion') - payFromSum(state, 'cushion'));
 }
 export function investTotal(state) {
-  return round2(sum(state.incomes, (i) => i.alloc && i.alloc.invest) + sum((state.transfers || []).filter((x) => x.to === 'invest'), (x) => x.amount) - purchaseTotal(state, 'invest') - goalFromInvest(state) - loanOut(state, 'invest'));
+  return round2(sum(state.incomes, (i) => assignedOf(i).invest) + sum((state.transfers || []).filter((x) => x.to === 'invest'), (x) => x.amount) - purchaseTotal(state, 'invest') - goalFromInvest(state) - loanOut(state, 'invest') - payFromSum(state, 'invest'));
 }
 // Сколько можно потратить на покупку из выбранного источника
 export function purchaseAvailable(state, src) {
@@ -262,7 +287,7 @@ export function allocateIncome(state, amount, date = ymd(), today = ymd()) {
   const out = splitAmount(amount, pc);
   const fx = fixedNeeds(state, today);
   if (!fx) return out;
-  const got = sum(state.incomes.filter((i) => monthOf(i.date) === monthOf(date)), (i) => i.alloc && i.alloc.needs);
+  const got = sum(state.incomes.filter((i) => monthOf(i.date) === monthOf(date)), (i) => assignedOf(i).needs);
   const room = Math.max(0, round2(fx - got));
   if (out.needs <= room) return out;
   const excess = round2(out.needs - room);
@@ -302,12 +327,12 @@ export function basketStats(state, today) {
   const pc = plan(state, today);
   const mk = monthOf(today);
   const inMonth = (d) => monthOf(d) === mk;
-  const alloc = (k) => sum(state.incomes.filter((i) => inMonth(i.date)), (i) => i.alloc && i.alloc[k])
+  const alloc = (k) => sum(state.incomes.filter((i) => inMonth(i.date)), (i) => assignedOf(i)[k])
     + sum((state.transfers || []).filter((x) => x.to === k && inMonth(x.date)), (x) => x.amount);
   const spent = {
-    needs: sum(state.expenses.filter((e) => e.kind === 'need' && inMonth(e.date)), (e) => e.amount),
-    joy: sum(state.expenses.filter((e) => e.kind === 'want' && inMonth(e.date)), (e) => e.amount),
-    debts: sum(state.payments.filter((x) => inMonth(x.date)), (x) => x.amount),
+    needs: sum(state.expenses.filter((e) => e.kind === 'need' && inMonth(e.date)), (e) => e.amount) + payFromSum(state, 'needs', mk),
+    joy: sum(state.expenses.filter((e) => e.kind === 'want' && inMonth(e.date)), (e) => e.amount) + payFromSum(state, 'joy', mk),
+    debts: payFromSum(state, 'debts', mk),
     cushion: 0,
     invest: 0,
   };
@@ -368,7 +393,7 @@ export function capital(state, today = ymd()) {
   const st = basketStats(state, today);
   // Месяцы, которые ещё не закрыты: их остатки (нужды, радость) пока лежат «в воздухе», но деньги никуда не делись
   let pend = 0;
-  pendingMonths(state, today).forEach((m) => { const r = planClosing(state, m).record; if (!r.skipped) pend += r.joyLeft + r.needsLeft; });
+  pendingMonths(state, today).forEach((m) => { const r = planClosing(state, m).record; if (!r.skipped) pend += r.joyLeft + r.needsLeft + (r.debtsLeft || 0) - (r.deficit || 0); });
   const jars = {
     needs: st.needs.left,
     // Платёж по долгу сверх того, что пришло в корзину, это деньги из кармана: корзина уходит в минус, капитал не растёт
@@ -376,8 +401,9 @@ export function capital(state, today = ymd()) {
     cushion: cushionTotal(state),
     invest: round2(investAvailable(state) + portfolioStats(state, today).value),
     joy: st.joy.left,
+    [UNALLOC]: unallocTotal(state),
   };
-  if (pend > 0) jars.joy = round2(jars.joy + pend);
+  if (pend !== 0) jars.joy = round2(jars.joy + pend);
   const total = round2(Object.values(jars).reduce((a, b) => a + b, 0));
   const owedToMe = loansReceivable(state);
   const debt = debtTotal(state);
@@ -457,20 +483,16 @@ export function priorityBasket(state, date = ymd()) {
   if (needs > 0 && cushionTotal(state) < 3 * needs) return 'cushion';
   return 'invest';
 }
-// Прошедшие месяцы, которые ещё не закрыты (текущий не закрываем; стартовый закрываем, если в нём был доход)
+// Прошедшие месяцы, которые ещё не закрыты (текущий не закрываем)
 export function pendingMonths(state, today) {
   const p = state.profile;
   if (!p.startDate) return [];
   const done = new Set((state.closings || []).map((c) => c.month));
   const cur = monthOf(today);
   const out = [];
-  // Стартовый месяц тоже закрываем, но только если в нём записан доход: иначе «переносить» нечего
-  const first = monthOf(p.startDate);
-  if (first < cur && !done.has(first) && state.incomes.some((i) => monthOf(i.date) === first)) out.push(first);
-  for (let m = monthAdd(first, 1); m < cur; m = monthAdd(m, 1)) if (!done.has(m)) out.push(m);
+  for (let m = monthOf(p.startDate); m < cur; m = monthAdd(m, 1)) if (!done.has(m)) out.push(m);
   return out;
-}
-export function activeDays(state, m) {
+}export function activeDays(state, m) {
   const set = new Set();
   const add = (d) => { if (d && monthOf(d) === m) set.add(d); };
   [...state.incomes, ...state.expenses, ...state.payments, ...(state.shifts || [])].forEach((x) => add(x.date));
@@ -478,24 +500,53 @@ export function activeDays(state, m) {
   return set.size;
 }
 // Считает, что осталось за месяц, и как это делится. Возвращает переводы и запись для истории.
+// Отпечаток месяца: по нему видно, что в уже закрытом месяце что-то добавили, изменили или удалили
+export function closingSig(state, m) {
+  const inM = (x) => monthOf(x.date) === m;
+  const part = (list) => { const l = (list || []).filter(inM); return `${l.length}:${round2(sum(l, (x) => x.amount))}`; };
+  return [part(state.incomes), part(state.expenses), part(state.payments), (state.noSpendDays || []).filter((d) => monthOf(d) === m).length].join('|');
+}
+// Первый закрытый месяц, в котором данные изменились после закрытия (или '')
+export function staleClosingMonth(state) {
+  const bad = (state.closings || []).filter((c) => c.sig && c.sig !== closingSig(state, c.month)).map((c) => c.month).sort();
+  return bad[0] || '';
+}
+// Закрытия это производные данные: если в закрытом месяце что-то изменилось (например, зарплату внесли задним числом),
+// закрываем этот месяц и все следующие заново. Возвращает true, если что-то пересчитано.
+export function repairClosings(state) {
+  let changed = false;
+  (state.closings || []).forEach((c) => { if (!c.sig) { c.sig = closingSig(state, c.month); changed = true; } }); // старые записи: запоминаем отпечаток
+  const stale = staleClosingMonth(state);
+  if (!stale) return changed;
+  const redo = state.closings.filter((c) => c.month >= stale).map((c) => c.month).sort();
+  state.closings = state.closings.filter((c) => c.month < stale);
+  state.transfers = (state.transfers || []).filter((x) => !x.month || x.month < stale);
+  redo.forEach((m) => { const r = planClosing(state, m); state.transfers.push(...r.transfers); state.closings.push(r.record); });
+  return true;
+}
 export function planClosing(state, m) {
   const rule = ROLLOVER_RULES[state.profile.rolloverRule] !== undefined ? state.profile.rolloverRule : 'split';
   const next = monthAdd(m, 1);
   const date = `${next}-01`;
-  const base = { id: 'close-' + m, month: m, date, rule };
+  const base = { id: 'close-' + m, month: m, date, rule, sig: closingSig(state, m) };
   if (activeDays(state, m) < 3) return { transfers: [], record: { ...base, skipped: true, joyLeft: 0, needsLeft: 0, keep: 0, moved: 0, basket: null } };
   const last = addDays(date, -1);
-  const pc = plan(state, last);
   const inM = (d) => monthOf(d) === m;
-  const carry = sum((state.transfers || []).filter((x) => x.to === 'joy' && inM(x.date)), (x) => x.amount);
-  const wants = sum(state.expenses.filter((e) => e.kind === 'want' && inM(e.date)), (e) => e.amount);
-  const needSpent = sum(state.expenses.filter((e) => e.kind === 'need' && inM(e.date)), (e) => e.amount);
+  const wants = sum(state.expenses.filter((e) => e.kind === 'want' && inM(e.date)), (e) => e.amount) + payFromSum(state, 'joy', m);
+  const needSpent = sum(state.expenses.filter((e) => e.kind === 'need' && inM(e.date)), (e) => e.amount) + payFromSum(state, 'needs', m);
   // Если за месяц записан доход, остаток считаем от реально пришедших денег, а не от ожидаемых: иначе при неполной зарплате
   // приложение «перенесёт» деньги, которых не было. Если доходов не записано совсем, считаем по плану, как раньше.
   const got = sum(state.incomes.filter((i) => inM(i.date)), (i) => i.amount);
-  const baseOv = got > 0 ? got : null;
-  const joyLeft = Math.max(0, round2(plannedFor(state, last, 'joy', pc, baseOv) + carry - wants));
-  const needsLeft = Math.max(0, round2(plannedFor(state, last, 'needs', pc, baseOv) - needSpent));
+  // Остаток считаем по тому, что реально пришло в горшки (доход + переносы), а не по плану: так капитал не меняется от закрытия.
+  const allocIn = (k) => sum(state.incomes.filter((i) => inM(i.date)), (i) => assignedOf(i)[k]) + sum((state.transfers || []).filter((x) => x.to === k && inM(x.date)), (x) => x.amount);
+  const debtPaid = payFromSum(state, 'debts', m);
+  const joyLeft = Math.max(0, round2(allocIn('joy') - wants));
+  const needsLeft = Math.max(0, round2(allocIn('needs') - needSpent));
+  // То, что отложили на долги, но не выплатили, не пропадает: остаётся в «Долгах» (или уходит в приоритетную корзину, если долгов уже нет)
+  const debtsLeft = Math.max(0, round2(allocIn('debts') - debtPaid));
+  // Перерасход (потратил больше, чем пришло в горшок) не «прощается» при смене месяца: переносится минусом, деньги-то ушли
+  const defOf = (spent, k) => Math.max(0, round2(spent - allocIn(k)));
+  const deficits = { joy: defOf(wants, 'joy'), needs: defOf(needSpent, 'needs'), debts: defOf(debtPaid, 'debts') };
   const keep = round2(joyLeft * ROLLOVER_RULES[rule]);
   const basket = priorityBasket(state, last);
   const transfers = [];
@@ -503,7 +554,10 @@ export function planClosing(state, m) {
   mk('keep', 'joy', 'joy', keep);
   mk('joy', 'joy', basket, round2(joyLeft - keep));
   mk('needs', 'needs', basket, needsLeft);
-  return { transfers, record: { ...base, skipped: false, joyLeft, needsLeft, keep, moved: round2(joyLeft - keep + needsLeft), basket } };
+  mk('debts', 'debts', basket, debtsLeft);
+  Object.entries(deficits).forEach(([k, v]) => { if (v > 0) transfers.push({ id: `tr-${m}-def-${k}`, date, month: m, from: k, to: k, amount: -v }); });
+  const deficit = round2(deficits.joy + deficits.needs + deficits.debts);
+  return { transfers, record: { ...base, skipped: false, joyLeft, needsLeft, debtsLeft, deficit, keep, moved: round2(joyLeft - keep + needsLeft + (basket === 'debts' ? 0 : debtsLeft)), basket } };
 }
 
 // ---------- «мне должны»: деньги, которые человек одолжил другим ----------
@@ -637,7 +691,7 @@ export function weekSummary(state, end) {
   const days = new Set([...incomes, ...exps, ...pays].map((x) => x.date).concat(none));
   const spentWants = round2(sum(exps.filter((e) => e.kind === 'want'), (e) => e.amount));
   const spentNeeds = round2(sum(exps.filter((e) => e.kind === 'need'), (e) => e.amount));
-  const saved = round2(sum(incomes, (i) => i.alloc && (Number(i.alloc.cushion || 0) + Number(i.alloc.invest || 0))));
+  const saved = round2(sum(incomes, (i) => Number(assignedOf(i).cushion || 0) + Number(assignedOf(i).invest || 0)));
   const joyWeek = round2((plannedFor(state, end, 'joy') / daysInMonthOf(end)) * 7);
   const hasData = days.size > 0;
   let verdict = 'quiet';
