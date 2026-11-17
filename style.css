@@ -358,3 +358,10 @@ button, a, label, select, input, summary, [data-act], .btn, .opt, .day, .treeSvg
 .news h4 { margin: 0 0 6px; font-size: 15px; }
 .news ul { margin: 0; padding-left: 20px; }
 .news li { margin: 0 0 7px; line-height: 1.4; }
+
+/* «Не распределено» */
+.card.unalloc.hot { border: 1px solid var(--accent, #f2bd4b); }
+.unrest { margin-top: 8px; }
+.unrest.hot b { color: var(--accent, #f2bd4b); }
+.foot.wrap { flex-wrap: wrap; gap: 8px; }
+.foot.wrap .btn { flex: 1 1 auto; }
